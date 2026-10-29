@@ -18,18 +18,74 @@ const char *TOUR_STAGE = "tsp-brute";
 
 Tour bestTour(const Grid &g, const std::vector<Cell> &stops) {
     Tour best;
+    best.cost = INF;
 
-    // TODO: your search here.
-    //
-    // You are handed the map and the stops, and nothing else. What you need
-    // is the K x K table of costs between every pair of stops -- and you
-    // wrote two ways of building one in Stage 5.
-    //
-    // best.order should read 0, ..., 0 -- the depot at both ends.
-    // best.cost is the sum of the legs along it.
-    // Treat any entry >= INF as unreachable and skip that ordering.
+    int k = (int)stops.size();
+    best.order = {0, 0}; // Default for K=1
 
-    (void)g; (void)stops;
+    if (k == 1) {
+        best.cost = 0;
+        best.order = {0, 0};
+        return best;
+    }
+
+    // Build the matrix using repeated Dijkstra (useFloyd = false)
+    Matrix m = waypointMatrix(g, stops, false);
+
+    // Set up the permutation vector: [1, 2, ..., K-1]
+    std::vector<int> perm;
+    for (int i = 1; i < k; ++i) {
+        perm.push_back(i);
+    }
+
+    long long candidate_count = 0;
+
+    // Try every permutation
+    do {
+        candidate_count = candidate_count + 1;
+
+        long current_cost = 0;
+        int prev = 0;
+        bool has_inf = false;
+
+        for (size_t i = 0; i < perm.size(); ++i) {
+            int next_stop = perm[i];
+            long leg_cost = m.at(prev, next_stop);
+
+            if (leg_cost >= INF) {
+                has_inf = true;
+                break;
+            }
+            current_cost = current_cost + leg_cost;
+            prev = next_stop;
+        }
+
+        if (has_inf == true) {
+            continue;
+        }
+
+        // Add the leg back to the depot (waypoint 0)
+        long return_cost = m.at(prev, 0);
+        if (return_cost >= INF) {
+            continue;
+        }
+        current_cost = current_cost + return_cost;
+
+        // Keep strictly cheaper
+        if (current_cost < best.cost) {
+            best.cost = current_cost;
+
+            best.order.clear();
+            best.order.push_back(0);
+            for (size_t i = 0; i < perm.size(); ++i) {
+                best.order.push_back(perm[i]);
+            }
+            best.order.push_back(0);
+        }
+
+    } while (std::next_permutation(perm.begin(), perm.end()) == true);
+
+    best.candidates = candidate_count;
     return best;
 }
 

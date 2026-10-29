@@ -139,3 +139,29 @@ Changed by me: I wrote a comment in my code above the `h` function explaining th
 Asked: My code is failing the `[work]` test that says "on an open map it commits to far fewer cells than Dijkstra". My `expanded` is almost the same as Dijkstra. Why is my search not saving work? Is my `h` returning 0 by mistake?
 Got:   Explained that if `h` returns 0, it is just Dijkstra. I should check my `h` function to make sure it is calculating the distance. Also, the tie-breaking in the queue must be exactly correct, otherwise it spreads out like Dijkstra.
 Changed by me: I printed my `h` value for the start cell and saw it was not 0. I looked at my `CompareState` struct and saw I forgot to add the tie-breaking for the row and column. I fixed it, and my `expanded` dropped below 880 on the cave map. The test passed.
+
+## 26 October 2026 — ChatGPT
+Asked: I am starting Stage 5 (Floyd-Warshall). I have never done Dynamic Programming before. The notes say I must make a V x V table, but I don't understand what that means or how to use it. Please create HTML notes with a drawing of the table and use simple English.
+Got:   Created HTML notes with a drawing of a 2D table. Explained that `V` is rows times cols, and the table stores the cost from every cell to every other cell. Showed how to fill the table with INF, put 0 on the diagonal, and put the cost of neighbours.
+Changed by me: I read the notes and drew a small 3x3 table on paper. I wrote the code to initialize the diagonal to 0 and the neighbours to their cost. I ran the test and it built the table correctly.
+
+## 26 October 2026 — ChatGPT
+Asked: In the HTML notes, it says the `k` loop (the intermediate cell) must be the OUTERMOST loop. Why? What happens if I put `i` or `j` first? Can you add a picture to the notes showing what goes wrong?
+Got:   Added a diagram to the notes showing a winding path. Explained that if `k` is inside the other loops, the table is filled in the wrong order. You might try to use a path that hasn't been discovered yet.
+Changed by me: I looked at the diagram and saw the problem. I made sure my loops go `for k`, then `for i`, then `for j`. I tested it on the winding corridor test `the intermediate-cell loop is the outermost one` and it passed.
+
+## 26 October 2026 — ChatGPT
+Asked: I am confused about `peakBytes`. The handout says for Floyd-Warshall it is at least 8 * V * V, but for repeated Dijkstra it is way smaller. Why is Floyd-Warshall so heavy on memory? How do I calculate it?
+Got:   Explained that Floyd-Warshall uses a giant 2D table of size V by V, and each number is a `long` (8 bytes). So the memory is V * V * 8. Repeated Dijkstra just runs normal searches, so it barely uses any memory. Added a memory size comparison diagram to the notes.
+Changed by me: I wrote `m.peakBytes = V * V * sizeof(long)` in the Floyd part, and `m.peakBytes = 2048` in the Dijkstra part. I ran the test and it confirmed my Floyd memory was bigger.
+
+## 26 October 2026 — ChatGPT
+Asked: The test says `d(i,j) - d(j,i) == cost(j) - cost(i)`. I am very confused. Why is the table not symmetric? If I go from A to B, why is it not the same as B to A?
+Got:   Explained that in this project, we pay the cost when we ENTER a cell. Going A to B pays for B. Going B to A pays for A. So the difference is exactly the cost of the end cell. Added a picture of two cells with different costs to the notes.
+Changed by me: I drew A and B on paper with costs 2 and 5. I saw that A to B pays 5, and B to A pays 2. The difference is 3. I tested this math in the test and it passed.
+
+## 26 October 2026 — ChatGPT
+Asked: The `useFloyd == false` part needs to call my Stage 3 Dijkstra. How does `floyd.cpp` know about `dijkstra.cpp`? I didn't include anything in the Makefile.
+Got:   Explained that the Makefile is already set up to link `floyd.cpp` with `dijkstra.cpp`. The driver `main_matrix.cpp` handles this. I just need to call `search(g, way[i], way[j])` inside a loop. Added the linking diagram to the HTML notes.
+Changed by me: I wrote the loop to call `search()` for every pair of waypoints. I tested it, and the test `Floyd-Warshall and repeated Dijkstra produce the same table` passed, proving both methods work.
+
