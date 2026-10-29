@@ -65,3 +65,22 @@ Asked: The handout says DFS must be iterative, but my friend tried a recursive o
 Got:   Explained that one of the test maps (`e02-corridor-41`) is a single corridor 798 cells long. A recursive DFS would call the function 798 times, which would overflow the call stack and crash the program. Also, `maxFrontier` is meant to measure the memory of the frontier, and if the frontier is the call stack, there is nothing to measure.
 Changed by me: I made sure my implementation is completely iterative using a `std::vector` as the stack. I ran the test on the `e02-corridor-41` map specifically to confirm it doesn't crash.
 
+## 23 October 2026 — ChatGPT
+Asked: I finished BFS, but I noticed a huge difference from DFS. In DFS, my `maxFrontier` on the `m09-open-61` map was huge. In BFS, the `maxFrontier` is much smaller. Why does BFS grow like a ring while DFS grows like a line? And what exactly happens if I mark cells as seen when I pop them (like in DFS) instead of when I push them?
+Got:   Explained that BFS explores layer by layer, so the frontier is the boundary of the explored area (like a ring). DFS dives deep, so it holds almost the whole map on its stack. If I marked cells on pop in BFS, the same cell would be queued multiple times by different neighbours, causing the queue size (and `maxFrontier`) to explode to the size of the whole map, failing the `[frontier]` test.
+Changed by me: I made sure to mark `seen[nbr_idx] = true` exactly inside the `if` block before I pushed it to the queue. I ran `make test-bfs` and checked the `[frontier]` test output to confirm my `maxFrontier` was small and the ring shape was correct.
+
+## 23 October 2026 — ChatGPT
+Asked: How does BFS guarantee the shortest path in steps? I understand the queue is FIFO, but can you write out the proof as if I am inventing it? And why does this proof break the moment we introduce terrain costs in Stage 3?
+Got:   Explained that because it's a FIFO queue, everything at distance \( d \) from the start is discovered before anything at distance \( d+1 \). So the first time we reach the goal, it is guaranteed to be the shortest path. The proof breaks in Stage 3 because "distance" stops meaning "number of steps" and starts meaning "total cost", so the first path found is not necessarily the cheapest.
+Changed by me: I wrote this proof down in my notebook. I also added comments in my code above the `while` loop explaining that BFS explores in concentric rings. This made me realize why the `[optimal]` test exists.
+
+## 23 October 2026 — ChatGPT
+Asked: In DFS, I had `trace::discard` for stale entries. But in my BFS code, I don't have any discards and the tests pass. Why does BFS never have discards? Is there ever a case where I need to discard in BFS?
+Got:   Explained that because we mark cells as seen on *push*, a cell is only ever pushed into the queue exactly once. Therefore, when we pop a cell, it is impossible for it to be a duplicate. In DFS, we push duplicates (because we mark on pop), so we need to discard the stale copies.
+Changed by me: I verified this by checking the `[frontier]` test in `tests/test_bfs.cpp`, which has a specific test called "nothing is discarded because nothing is queued twice". I confirmed my code has no `trace::discard` calls and passed the test.
+
+## 23 October 2026 — ChatGPT
+Asked: I noticed a test called `[optimal]` checks if `r.path.size() - 1 == fewestSteps`. What is the `fewestSteps` function doing in the test harness? Why is it so important that it matches my BFS answer exactly?
+Got:   Explained that `fewestSteps` is an independent "oracle" (a separate BFS written by the lecturers) inside `harness.h`. It is used to verify that my BFS actually found the true minimum steps, not just a valid path. The test ensures my code isn't just returning a random path, but the mathematically shortest one.
+Changed by me: I looked at `fewestSteps` in the test file. I traced it manually on a small 3x3 map and saw it uses a `std::deque` instead of `std::queue`. It gave me confidence that my code is correct because two different implementations of BFS (mine and the oracle's) return the exact same step count.
