@@ -84,3 +84,33 @@ Changed by me: I verified this by checking the `[frontier]` test in `tests/test_
 Asked: I noticed a test called `[optimal]` checks if `r.path.size() - 1 == fewestSteps`. What is the `fewestSteps` function doing in the test harness? Why is it so important that it matches my BFS answer exactly?
 Got:   Explained that `fewestSteps` is an independent "oracle" (a separate BFS written by the lecturers) inside `harness.h`. It is used to verify that my BFS actually found the true minimum steps, not just a valid path. The test ensures my code isn't just returning a random path, but the mathematically shortest one.
 Changed by me: I looked at `fewestSteps` in the test file. I traced it manually on a small 3x3 map and saw it uses a `std::deque` instead of `std::queue`. It gave me confidence that my code is correct because two different implementations of BFS (mine and the oracle's) return the exact same step count.
+
+## 24 October 2026 — ChatGPT
+Asked: I am starting Stage 3 (Dijkstra) and it is very hard. Please create HTML notes for me to read. I don't understand the `std::priority_queue`. How does it sort the smallest cost first? Can you put diagrams in the HTML notes so I can see how the heap works? Please use simple English.
+Got:   Created HTML notes with a step-by-step diagram of the min-heap. Showed me the `struct` and `operator()` using full `if/else` so I can read it easily.
+Changed by me: I read the HTML notes on my laptop. I drew the heap tree on paper to see how the numbers go up and down. Then I typed the `CompareState` struct into my code. I tested it and the smallest cost comes out first.
+
+## 24 October 2026 — ChatGPT
+Asked: The HTML notes explain the tie-breaking rule, but I am still a little bit confused. How do I write the code so that if the cost is the same, it picks the smaller row, and then the smaller column? Can you add a table to the notes showing this?
+Got:   Added a new section to the HTML notes with a table showing the ties. Showed me the code step by step using standard `if` statements.
+Changed by me: I looked at the table in the notes. I traced a 3x3 map on paper to see why row 1 comes out before row 2. I put the `if` statements in my code. My search now follows the exact order the project wants.
+
+## 24 October 2026 — ChatGPT
+Asked: I read the notes about "lazy deletion". I am very confused. The handout says `priority_queue` cannot change a value already inside. The notes say we must push a new entry and throw away the old one. Can you add a diagram to the HTML notes showing the old entry and the new entry inside the queue?
+Got:   Updated the HTML notes with a diagram showing the queue with two entries for the same cell (one old, one new). Explained the `settled` array and how `trace::discard` is used.
+Changed by me: I looked at the diagram and saw the old entry is like a duplicate. I added the `settled` check in my code. I ran the test and saw the `discard` events happen when the old entry comes out.
+
+## 24 October 2026 — ChatGPT
+Asked: In the HTML notes, it says Dijkstra has "no relax" events. I am very confused. If we find a cheaper path, why is there no relax? Please explain in simple English and add a flow diagram in the notes.
+Got:   Explained the math simply. Because we pay when we enter a cell, the first time we pop the cell from the queue, it is already the cheapest. Added a flow diagram in the HTML notes showing why it cannot be cheaper later.
+Changed by me: I read the explanation three times. I drew the cost on paper to see it myself. I checked my code and made sure I don't call `trace::relax` at all. The test `this cost model never needs a cell to be updated` passed.
+
+## 24 October 2026 — ChatGPT
+Asked: The tests say Dijkstra must take more steps than BFS on terrain maps. But in my head, the best path should also be the shortest? Why does it take more steps? The HTML notes didn't explain this enough.
+Got:   Added a new section to the HTML notes with a picture of a small map. Showed how BFS goes straight through the high numbers (cost 9) and Dijkstra goes around them.
+Changed by me: I ran `./run bfs t02` and `./run dijkstra t02` in my terminal. I watched the screen. I saw BFS go straight through the red block, and Dijkstra take a longer way around. I understand now that fewer steps is not always cheaper.
+
+## 24 October 2026 — ChatGPT
+Asked: My code crashes when I try to trace the path back. The start cell parent is (-1, -1) and my loop breaks. How do I fix this? Can you update the HTML notes with a picture of the parent array?
+Got:   Showed me the `if` check for `-1`. Added a simple diagram of the parent array to the HTML notes so I can see the chain from the goal to the start.
+Changed by me: I added the check `if (p.r == -1 && p.c == -1)` inside my `while` loop. I ran the test for the `e03-adjacent-11` map (start next to goal) and it doesn't crash anymore.

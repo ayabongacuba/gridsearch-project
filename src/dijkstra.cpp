@@ -34,12 +34,12 @@ struct State {
 struct CompareState {
     bool operator()(const State &a, const State &b) const {
         if (a.cost != b.cost) {
-            return a.cost > b.cost; // Min-heap: smaller cost is higher priority
+            return a.cost > b.cost; // Smallest cost first
         }
         if (a.r != b.r) {
-            return a.r > b.r; // Tie-breaker: smaller row
+            return a.r > b.r; // Smaller row first
         }
-        return a.c > b.c; // Tie-breaker: smaller column
+        return a.c > b.c; // Smaller column first
     }
 };
 
@@ -161,7 +161,7 @@ Result search(const Grid &g, Cell start, Cell goal) {
 
             Cell p = parent_cells[curr_idx];
             if (p.r == -1 && p.c == -1) {
-                break; // Should not happen if found is true, but safe
+                break;
             }
             curr_idx = g.index(p);
         }
