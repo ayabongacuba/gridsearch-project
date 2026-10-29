@@ -1,0 +1,25 @@
+{
+  "files.associations": {
+    "*.h": "cpp",
+    "*.grid": "plaintext"
+  },
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/include",
+    "${workspaceFolder}/tests"
+  ],
+  "editor.rulers": [
+    80
+  ],
+  "editor.insertSpaces": true,
+  "editor.tabSize": 4,
+  "files.trimTrailingWhitespace": true,
+  "files.exclude": {
+    "bin/": true,
+    "runs/": true,
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    "tests/catch.hpp": true
+  }
+}

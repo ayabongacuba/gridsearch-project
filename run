@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# run -- build a stage and watch it search.
+#
+#   ./run dfs                    default maze, opens the visualiser
+#   ./run bfs m05                short name works, any unique prefix
+#   ./run astar m08-caves-101
+#   ./run dfs m05 --no-viz       stats only
+#   ./run dfs --solved           build from solutions/ instead of src/
+#
+set -euo pipefail
+cd "$(dirname "$0")"
+
+STAGE="${1:-}"
+if [[ "$STAGE" == "bench" ]]; then shift; exec python3 bench/bench.py "$@"; fi
+if [[ -z "$STAGE" || "$STAGE" == "-h" || "$STAGE" == "--help" ]]; then
+  echo "usage: ./run <stage|compare> [maze] [--live] [--no-viz] [--render] [--stubs]"
+  echo
+  echo "  stages 1-4   dfs  bfs  dijkstra  astar     one search, one map"
+  echo "  stage 5      floyd [--fw | --dij]          waypoint matrix, two ways"
+  echo "  stage 6      tsp                           cheapest tour over the waypoints"
+  echo "  compare      all four searches at once, synchronised on expansions"
+  echo
+  echo "  --window     replay in a native window instead of the browser"
+  echo "  --live       browser opens first and the search streams into it"
+  echo "mazes:"; ls maps/*.grid | sed 's|maps/|  |;s|\.grid||'
+  exit 0
+fi
+shift
+
+MAZE="m01-perfect-21"
+case "$STAGE" in floyd|tsp) MAZE="w02-caves-45";; esac
+VIZ="--viz"
+EXTRA=()
+MAKEARGS=()
+for a in "$@"; do
+  case "$a" in
+    --no-viz) VIZ="" ;;
+    --live)   VIZ="--live" ;;
+    --window|--win) VIZ="--window" ;;
+    --stubs)  MAKEARGS+=("STUBS=1") ;;
+    --*)      EXTRA+=("$a") ;;
+    *)        MAZE="$a" ;;
+  esac
+done
+
+# accept any unique prefix of a maze name
+MATCH=$(ls maps/ | grep "^${MAZE}" | head -1 || true)
+if [[ -z "$MATCH" ]]; then
+  echo "no maze matching '${MAZE}'. available:"; ls maps/*.grid | sed 's|maps/|  |;s|\.grid||'
+  exit 1
+fi
+
+INST="${MATCH%.grid}"
+
+if [[ "$STAGE" == "compare" ]]; then
+  make -s bin/dfs bin/bfs bin/dijkstra bin/astar bin/compare "${MAKEARGS[@]+"${MAKEARGS[@]}"}"
+  mkdir -p runs
+  TRACES=()
+  echo "── all four on ${INST}"
+  printf "%-10s %8s %8s %10s %12s\n" algorithm cost steps expanded maxfrontier
+  for S in dfs bfs dijkstra astar; do
+    T="runs/${INST}.${S}.trace"
+    OUT=$("./bin/${S}" --quiet --trace "$T" "maps/${MATCH}" 2>/dev/null)
+    printf "%-10s %8s %8s %10s %12s\n" "$S" \
+      "$(awk '/^COST/{print $2}' <<<"$OUT")" \
+      "$(awk '/^LEN/{print $2-1}' <<<"$OUT")" \
+      "$(awk '/^EXPANDED/{print $2}' <<<"$OUT")" \
+      "$(awk '/^MAXFRONTIER/{print $2}' <<<"$OUT")"
+    TRACES+=("$T")
+  done
+  CMPARGS=()
+  [[ "$VIZ" == "--window" ]] && CMPARGS+=(--window)
+  ./bin/compare "${TRACES[@]}" ${CMPARGS[@]+"${CMPARGS[@]}"} \
+      -t "gridsearch - ${INST}" -o "runs/compare-${INST}.html"
+  exit 0
+fi
+
+make -s "bin/${STAGE}" "${MAKEARGS[@]+"${MAKEARGS[@]}"}"
+echo "── ${STAGE} on ${INST}"
+if [[ "$STAGE" == "floyd" || "$STAGE" == "tsp" ]]; then
+  [[ "$VIZ" == "--live" ]] && VIZ="--viz"
+fi
+"./bin/${STAGE}" ${VIZ} "${EXTRA[@]+"${EXTRA[@]}"}" "maps/${MATCH}"

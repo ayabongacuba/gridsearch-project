@@ -1,0 +1,4 @@
+METHOD tsp-brute
+K 8
+COST 1709
+ORDER 0 3 6 1 4 2 7 5 0

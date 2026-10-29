@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gridsearch — side by side</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rock:#171210; --lamp:#F0A93B; --lead:#7CC4FF; --grass:#22C55E; --chalk:#E8DCC4;
+  --muted:#8B7A69; --rule:#33281F;
+  --display:'Anton',Impact,sans-serif;
+  --body:'Archivo',ui-sans-serif,system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--rock);color:var(--chalk);font-family:var(--body);
+     display:flex;flex-direction:column;overflow:hidden}
+.masthead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:11px 20px;
+  border-bottom:1px solid var(--rule);flex:none;
+  background:linear-gradient(180deg,#1D1613,var(--rock))}
+.eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-size:26px;line-height:1;letter-spacing:.02em;
+  text-transform:uppercase;margin:0;color:var(--lamp)}
+.inst{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.spacer{flex:1}
+.grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:1px;background:var(--rule);min-height:0}
+.panel{position:relative;background:#100C0A;min-height:0;display:flex;flex-direction:column}
+.panel canvas{flex:1;width:100%;min-height:0;display:block}
+.cap{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;
+  padding:7px 11px;background:linear-gradient(180deg,rgba(12,9,8,.92),rgba(12,9,8,0));
+  pointer-events:none}
+.cap .nm{font-family:var(--display);font-size:15px;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--chalk)}
+.cap .st{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.05em}
+.cap .st b{color:var(--lamp);font-weight:500}
+.cap .fin{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--lead)}
+.transport{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px;
+  border-top:1px solid var(--rule);background:#140F0D;flex-wrap:wrap}
+button{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  background:#211A15;color:var(--chalk);border:1px solid var(--rule);border-radius:2px;
+  padding:7px 12px;cursor:pointer}
+button:hover{border-color:#54402F}
+button:focus-visible{outline:2px solid var(--lead);outline-offset:2px}
+#play{min-width:80px;font-weight:600}
+.rates{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.rates button{border:none;border-right:1px solid var(--rule);border-radius:0;
+  padding:7px 11px;background:transparent;color:var(--muted)}
+.rates button:last-child{border-right:none}
+.rates button[aria-pressed="true"]{background:var(--lamp);color:var(--rock);font-weight:600}
+input[type=range]{flex:1;min-width:140px;appearance:none;height:3px;background:var(--rule);
+  border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;
+  border-radius:50%;background:var(--lamp);border:2px solid var(--rock)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;
+  background:var(--lamp);border:2px solid var(--rock)}
+.tick{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:180px;text-align:right}
+.tick b{color:var(--chalk);font-weight:500}
+table{border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.sheet{flex:none;border-top:1px solid var(--rule);background:#130F0D;padding:9px 16px 12px;
+  overflow-x:auto}
+th,td{padding:4px 14px 4px 0;text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px}
+td:first-child,th:first-child{text-align:left;color:var(--chalk)}
+td.best{color:var(--lamp)}
+@media (max-width:900px){body{overflow:auto}.grid{grid-template-columns:1fr;grid-template-rows:repeat(4,52vh)}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="eyebrow">gridsearch</span>
+  <h1>Side by side</h1>
+  <span class="inst" id="inst"></span>
+  <span class="spacer"></span>
+  <span class="inst">synchronised on expansions, not wall clock</span>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="sheet">
+  <table id="sheet"><thead><tr>
+    <th>Algorithm</th><th>Cost</th><th>Steps</th><th>Expanded</th>
+    <th>Max frontier</th><th>Finished at</th>
+  </tr></thead><tbody></tbody></table>
+</div>
+
+<div class="transport">
+  <button id="play">Play</button>
+  <div class="rates" id="rates"></div>
+  <input type="range" id="scrub" min="0" max="1" value="0" aria-label="Expansions">
+  <span class="tick"><b id="pos">0</b> / <span id="tot">0</span> expansions</span>
+</div>
+
+<script type="text/plain" id="payload">__RUNS_PAYLOAD__</script>
+<script>
+const DR=[-1,0,1,0], DC=[0,1,0,-1];
+const tileCost=ch=>(ch>='1'&&ch<='9')?(+ch):1;
+const FLOOR=(()=>{const a=[4,5,10],b=[51,40,60],o={};
+  for(let d=1;d<=9;d++){const t=(d-1)/8;
+    o[String(d)]=`rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;}
+  o['.']=o['1']; return o;})();
+const RAMP=(()=>{const a=[122,61,28],b=[240,169,59],o=[];
+  for(let i=0;i<24;i++){const t=i/23;
+    o.push(`rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`);}
+  return o;})();
+
+function parseRun(text){
+  const lines=text.split(/\r?\n/);
+  let R=0,C=0,grid=[],S=[0,0],G=[0,0],algo='?',inst='',mapLeft=0,inE=false;
+  const ev=[],path=[];
+  for(const raw of lines){
+    if(mapLeft>0){grid.push(raw);mapLeft--;continue;}
+    const t=raw.trim();
+    if(inE){
+      if(!t) continue;
+      const p=t.split(/\s+/);
+      if(p[0]==='E') ev.push({t:1,r:+p[1],c:+p[2],p:(+p[3]<0?-1:(+p[3])*C+(+p[4]))});
+      else if(p[0]==='P') ev.push({t:2,r:+p[1],c:+p[2]});
+      else if(p[0]==='D') ev.push({t:3,r:+p[1],c:+p[2]});
+      else if(p[0]==='R') ev.push({t:4,r:+p[1],c:+p[2],p:(+p[4])*C+(+p[5])});
+      else if(p[0]==='W') path.push((+p[1])*C+(+p[2]));
+      continue;
+    }
+    if(t.startsWith('ALGORITHM ')) algo=t.slice(10).trim();
+    else if(t.startsWith('INSTANCE ')) inst=t.slice(9).trim();
+    else if(t.startsWith('GRID ')){const p=t.split(/\s+/);R=+p[1];C=+p[2];}
+    else if(t==='MAP') mapLeft=R;
+    else if(t.startsWith('START ')){const p=t.split(/\s+/);S=[+p[1],+p[2]];}
+    else if(t.startsWith('GOAL ')){const p=t.split(/\s+/);G=[+p[1],+p[2]];}
+    else if(t==='EVENTS') inE=true;
+  }
+  const N=R*C;
+  const run={algo,inst,R,C,grid,S,G,ev,path,
+    when:new Int32Array(N).fill(-1),pend:new Int32Array(N),
+    parent:new Int32Array(N).fill(-1),
+    cursor:0,expanded:0,frontier:0,maxFrontier:0,head:-1};
+  // total expansions, and the cost of the path it found
+  run.total=ev.reduce((n,e)=>n+(e.t===1?1:0),0);
+  run.cost=0; for(let i=1;i<path.length;i++){
+    const n=path[i]; run.cost+=tileCost(grid[(n/C)|0][n%C]); }
+  run.steps=Math.max(0,path.length-1);
+  // final frontier peak, precomputed so the table is right from the start
+  let f=0,mx=0; for(const e of ev){ if(e.t===2||e.t===4)f++; else f--; if(f>mx)mx=f; }
+  run.peak=mx;
+  return run;
+}
+
+const RUNS=document.getElementById('payload').textContent
+  .split('===RUN===').map(s=>s.trim()).filter(Boolean).map(parseRun);
+if(!RUNS.length) document.body.innerHTML='<p style="padding:30px">No runs in this file.</p>';
+const ORDER={dfs:0,bfs:1,dijkstra:2,astar:3};
+RUNS.sort((a,b)=>(ORDER[a.algo]??9)-(ORDER[b.algo]??9));
+const MAXEXP=Math.max(...RUNS.map(r=>r.total));
+document.getElementById('inst').textContent=RUNS[0].inst;
+document.getElementById('tot').textContent=MAXEXP.toLocaleString();
+document.getElementById('scrub').max=MAXEXP;
+
+// --- panels ---
+const gridEl=document.getElementById('grid');
+for(const r of RUNS){
+  const d=document.createElement('div'); d.className='panel';
+  d.innerHTML=`<div class="cap"><span class="nm">${r.algo}</span>
+    <span class="st">exp <b class="e">0</b> · frontier <b class="f">0</b></span>
+    <span class="fin"></span></div><canvas></canvas>`;
+  gridEl.appendChild(d);
+  r.el=d; r.cv=d.querySelector('canvas'); r.x=r.cv.getContext('2d');
+  r.eEl=d.querySelector('.e'); r.fEl=d.querySelector('.f'); r.finEl=d.querySelector('.fin');
+}
+
+function resetRun(r){
+  r.when.fill(-1); r.pend.fill(0); r.parent.fill(-1);
+  r.cursor=0; r.expanded=0; r.frontier=0; r.maxFrontier=0; r.head=-1;
+}
+// advance a run until it has expanded `target` cells (or run out)
+function seekRun(r,target){
+  if(r.expanded>target) resetRun(r);
+  while(r.expanded<target && r.cursor<r.ev.length){
+    const e=r.ev[r.cursor++], n=e.r*r.C+e.c;
+    if(e.t===2){r.pend[n]++;r.frontier++;}
+    else if(e.t===3){r.pend[n]--;r.frontier--;}
+    else if(e.t===4){r.pend[n]++;r.frontier++;r.parent[n]=e.p;}
+    else{r.pend[n]--;r.frontier--;r.when[n]=r.expanded;r.parent[n]=e.p;
+         r.head=n;r.expanded++;}
+    if(r.frontier>r.maxFrontier)r.maxFrontier=r.frontier;
+  }
+}
+
+function sizeAll(){
+  for(const r of RUNS){
+    const d=devicePixelRatio||1,b=r.cv.getBoundingClientRect();
+    r.cv.width=Math.max(1,b.width*d|0); r.cv.height=Math.max(1,b.height*d|0);
+    r.x.setTransform(d,0,0,d,0,0);
+  }
+}
+
+function drawRun(r){
+  const b=r.cv.getBoundingClientRect(), pad=10, x=r.x;
+  const cs=Math.max(1,Math.floor(Math.min((b.width-pad*2)/r.C,(b.height-pad*2)/r.R)));
+  const ox=(b.width-cs*r.C)/2|0, oy=(b.height-cs*r.R)/2|0;
+  x.clearRect(0,0,b.width,b.height);
+  for(let rr=0;rr<r.R;rr++){ const row=r.grid[rr];
+    for(let cc=0;cc<r.C;cc++){
+      x.fillStyle = row[cc]==='#' ? '#181D3B' : (FLOOR[row[cc]]||FLOOR['.']);
+      x.fillRect(ox+cc*cs,oy+rr*cs,cs,cs);
+    } }
+  const w=Math.min(400,Math.max(60,(r.total/8)|0));
+  const settled = r.expanded>=r.total && r.path.length;
+  for(let n=0;n<r.when.length;n++){
+    if(r.when[n]<0) continue;
+    const age=r.expanded-r.when[n], k=age>=w?0:Math.round((1-age/w)*23);
+    x.fillStyle=RAMP[k];
+    x.globalAlpha=(age>=w?0.42:0.42+0.58*(1-age/w))*(settled?0.5:1);
+    x.fillRect(ox+(n%r.C)*cs,oy+((n/r.C)|0)*cs,cs,cs);
+  }
+  x.globalAlpha=1;
+  x.fillStyle='#7CC4FF';
+  for(let n=0;n<r.pend.length;n++){
+    if(r.pend[n]<=0||r.when[n]>=0) continue;
+    x.fillRect(ox+(n%r.C)*cs,oy+((n/r.C)|0)*cs,cs,cs);
+  }
+  if(r.head>=0 && !settled){
+    x.strokeStyle='#F3E4C6'; x.lineWidth=Math.max(1,cs*0.22);
+    x.lineJoin='round'; x.lineCap='round'; x.globalAlpha=.72;
+    x.beginPath(); let n=r.head,first=true,guard=0;
+    while(n!==-1&&guard++<r.R*r.C){
+      const px=ox+(n%r.C)*cs+cs/2, py=oy+((n/r.C)|0)*cs+cs/2;
+      first?x.moveTo(px,py):x.lineTo(px,py); first=false; n=r.parent[n];
+    }
+    x.stroke(); x.globalAlpha=1;
+  }
+  if(settled){
+    const px=n=>ox+(n%r.C)*cs+cs/2, py=n=>oy+((n/r.C)|0)*cs+cs/2;
+    x.lineJoin='round'; x.lineCap='round';
+    x.lineWidth=Math.max(2,cs*0.74); x.strokeStyle='rgba(4,5,10,.85)';
+    x.beginPath(); r.path.forEach((n,i)=>i?x.lineTo(px(n),py(n)):x.moveTo(px(n),py(n)));
+    x.stroke();
+    x.lineWidth=Math.max(1.4,cs*0.52); x.strokeStyle='#22C55E';
+    x.beginPath(); r.path.forEach((n,i)=>i?x.lineTo(px(n),py(n)):x.moveTo(px(n),py(n)));
+    x.stroke();
+  }
+  const mk=(p,col)=>{
+    const mx=ox+p[1]*cs+cs/2, my=oy+p[0]*cs+cs/2, rad=Math.max(4,cs*0.85);
+    x.fillStyle=col; x.beginPath(); x.arc(mx,my,rad,0,6.2832); x.fill();
+    x.strokeStyle='#04050A'; x.lineWidth=Math.max(1.2,rad*0.30);
+    x.beginPath(); x.arc(mx,my,rad*0.40,0,6.2832); x.stroke(); };
+  mk(r.S,'#7CC4FF'); mk(r.G,'#F0A93B');
+  r.eEl.textContent=r.expanded.toLocaleString();
+  r.fEl.textContent=r.frontier.toLocaleString();
+  r.finEl.textContent = r.expanded>=r.total ? 'done at '+r.total.toLocaleString() : '';
+}
+
+function sheet(){
+  const tb=document.querySelector('#sheet tbody'); tb.innerHTML='';
+  const bestCost=Math.min(...RUNS.map(r=>r.cost||1e9));
+  const bestExp=Math.min(...RUNS.map(r=>r.total));
+  for(const r of RUNS){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.algo}</td>
+      <td class="${r.cost===bestCost?'best':''}">${r.cost.toLocaleString()}</td>
+      <td>${r.steps.toLocaleString()}</td>
+      <td class="${r.total===bestExp?'best':''}">${r.total.toLocaleString()}</td>
+      <td>${r.peak.toLocaleString()}</td>
+      <td>${r.total.toLocaleString()}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+let at=0, playing=false, rate=1, raf=null, last=0, acc=0;
+const RATES=[{l:'1&times;',v:60},{l:'2&times;',v:120},{l:'4&times;',v:260},
+             {l:'8&times;',v:700},{l:'Max',v:Infinity}];
+function render(){
+  for(const r of RUNS){ seekRun(r,at); drawRun(r); }
+  document.getElementById('pos').textContent=at.toLocaleString();
+  document.getElementById('scrub').value=at;
+}
+function tick(now){
+  if(!playing){raf=null;return;}
+  const dt=Math.min(.1,(now-last)/1000); last=now;
+  const v=RATES[rate].v;
+  let n = v===Infinity ? 5000 : (acc+=dt*v, Math.floor(acc));
+  if(v!==Infinity) acc-=n;
+  at=Math.min(MAXEXP,at+n); render();
+  if(at>=MAXEXP){playing=false;document.getElementById('play').textContent='Replay';raf=null;return;}
+  raf=requestAnimationFrame(tick);
+}
+function setPlaying(p){
+  playing=p;
+  document.getElementById('play').textContent=p?'Pause':(at>=MAXEXP?'Replay':'Play');
+  if(p){last=performance.now();acc=0;if(!raf)raf=requestAnimationFrame(tick);}
+}
+const ratesEl=document.getElementById('rates');
+RATES.forEach((r,i)=>{const b=document.createElement('button');
+  b.innerHTML=r.l; b.setAttribute('aria-pressed',i===rate?'true':'false');
+  b.onclick=()=>{rate=i;acc=0;
+    [...ratesEl.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i?'true':'false'));};
+  ratesEl.appendChild(b);});
+document.getElementById('play').onclick=()=>{ if(at>=MAXEXP){at=0;} setPlaying(!playing); };
+document.getElementById('scrub').oninput=e=>{setPlaying(false);at=+e.target.value;render();};
+addEventListener('keydown',e=>{ if(e.key===' '){e.preventDefault();
+  document.getElementById('play').click();} });
+addEventListener('resize',()=>{sizeAll();render();});
+
+sizeAll(); sheet(); render();
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches) setPlaying(true);
+</script>
+</body>
+</html>

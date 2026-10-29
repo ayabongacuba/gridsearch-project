@@ -1,0 +1,6 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "C_Cpp.default.cppStandard": "c++17"
+  }
+}

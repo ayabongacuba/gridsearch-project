@@ -1,0 +1,20 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "gridsearch",
+      "includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/tests"
+      ],
+      "defines": [
+        "GS_ROOT=\"${workspaceFolder}\"",
+        "GS_MAPS=\"${workspaceFolder}/maps\"",
+        "GS_EXPECTED=\"${workspaceFolder}/expected\""
+      ],
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "${default}"
+    }
+  ]
+}

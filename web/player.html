@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gridsearch — replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rock:#0A0B14; --mass:#1C2244; --void:#06070C; --grout:#232A52;
+  --lamp:#F0A93B; --cooled:#7A3D1C; --lead:#7CC4FF; --grass:#22C55E; --chalk:#E8DCC4;
+  --muted:#7C86A8; --rule:#232A4A;
+  --display:'Anton',Impact,sans-serif;
+  --body:'Archivo',ui-sans-serif,system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--rock);color:var(--chalk);font-family:var(--body);
+     display:flex;flex-direction:column;overflow:hidden}
+.masthead{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:11px 20px;border-bottom:1px solid var(--rule);flex:none;
+  background:linear-gradient(180deg,#1D1613,var(--rock))}
+.eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);writing-mode:horizontal-tb}
+.algo{font-family:var(--display);font-size:27px;line-height:1;letter-spacing:.02em;
+  text-transform:uppercase;margin:0;color:var(--lamp)}
+.inst{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.masthead .spacer{flex:1}
+.shell{flex:1;display:flex;min-height:0}
+.stage{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.viewport{flex:1;position:relative;min-height:0;background:#06070C}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ribbon{flex:none;height:64px;border-top:1px solid var(--rule);position:relative;background:#080A12}
+#depth{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ribbon .tag{position:absolute;left:10px;top:7px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.transport{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px;
+  border-top:1px solid var(--rule);background:#0B0D18;flex-wrap:wrap}
+button{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  background:#161A30;color:var(--chalk);border:1px solid var(--rule);border-radius:2px;
+  padding:7px 12px;cursor:pointer}
+button:hover{border-color:#3A4577}
+button:focus-visible{outline:2px solid var(--lead);outline-offset:2px}
+#play{min-width:80px;font-weight:600}
+#follow[aria-pressed="true"]{background:var(--lead);color:var(--rock);border-color:var(--lead);font-weight:600}
+.masthead .inst#warn{color:var(--lead);letter-spacing:.18em;text-transform:uppercase;font-size:9.5px}
+.rates{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+.rates button{border:none;border-right:1px solid var(--rule);border-radius:0;padding:7px 11px;background:transparent;color:var(--muted)}
+.rates button:last-child{border-right:none}
+.rates button[aria-pressed="true"]{background:var(--lamp);color:var(--rock);font-weight:600}
+.step{padding:7px 10px}
+input[type=range]{flex:1;min-width:120px;appearance:none;height:3px;background:var(--rule);border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:var(--lamp);border:2px solid #06070C}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--lamp);border:2px solid #06070C}
+input[type=range]:focus-visible{outline:2px solid var(--lead);outline-offset:4px}
+.tick{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:128px;text-align:right}
+.tick b{color:var(--chalk);font-weight:500}
+.rail{flex:none;width:264px;border-left:1px solid var(--rule);background:#0A0C16;
+  display:flex;flex-direction:column;overflow-y:auto}
+.block{padding:14px 18px;border-bottom:1px solid var(--rule)}
+.block h2{margin:0 0 10px;font-family:var(--mono);font-size:9.5px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+dl{margin:0}
+.stat{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
+.stat dt{font-size:12.5px;color:#A9B2CE}
+.stat dd{margin:0;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--chalk)}
+.stat dd.hot{color:var(--lamp)} .stat dd.cool{color:var(--lead)}
+.legend{display:flex;flex-direction:column;gap:7px}
+.legend div{display:flex;align-items:center;gap:9px;font-size:12px;color:#A9B2CE}
+.legend .c{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.sw{width:13px;height:13px;border-radius:2px;flex:none}
+.note{font-size:12px;line-height:1.5;color:var(--muted);margin:0}
+.note+.note{margin-top:8px} .note b{color:#C3CAE4;font-weight:600}
+.drop{margin:13px 18px 18px;border:1px dashed var(--rule);border-radius:3px;padding:13px;
+  text-align:center;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--lead);color:var(--lead)}
+@media (max-width:880px){
+  body{overflow:auto}.shell{flex-direction:column}
+  .rail{width:auto;border-left:none;border-top:1px solid var(--rule)}
+  .viewport{height:54vh}.tick{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="eyebrow">gridsearch</span>
+  <h1 class="algo" id="algo">—</h1>
+  <span class="inst" id="inst"></span>
+  <span class="spacer"></span>
+  <span class="inst" id="warn"></span>
+</header>
+
+<div class="shell">
+  <main class="stage">
+    <div class="viewport"><canvas id="map"></canvas></div>
+    <div class="ribbon"><canvas id="depth"></canvas><span class="tag" id="ribtag">Depth from start</span></div>
+    <div class="transport">
+      <button id="play">Play</button>
+      <button class="step" id="back" title="One event back">&#9664;|</button>
+      <button class="step" id="fwd" title="One event forward">|&#9654;</button>
+      <div class="rates" id="rates" role="group" aria-label="Replay speed"></div>
+      <input type="range" id="scrub" min="0" max="1" value="0" aria-label="Scrub through the search">
+      <span class="tick"><b id="pos">0</b> / <span id="tot">0</span></span>
+    </div>
+  </main>
+
+  <aside class="rail">
+    <div class="block"><h2>Live</h2><dl>
+      <div class="stat"><dt>Expanded</dt><dd id="s-exp" class="hot">0</dd></div>
+      <div class="stat"><dt>Frontier</dt><dd id="s-fro" class="cool">0</dd></div>
+      <div class="stat"><dt>Max frontier</dt><dd id="s-max">0</dd></div>
+      <div class="stat"><dt>Depth from start</dt><dd id="s-dep">0</dd></div>
+      <div class="stat"><dt>Frontier jumps</dt><dd id="s-bak">0</dd></div>
+      <div class="stat"><dt>Re-routes</dt><dd id="s-rel">0</dd></div>
+    </dl></div>
+    <div class="block"><h2>Result</h2><dl>
+      <div class="stat"><dt>Path cost</dt><dd id="s-cost">&mdash;</dd></div>
+      <div class="stat"><dt>Path steps</dt><dd id="s-len">&mdash;</dd></div>
+      <div class="stat"><dt>Fewest steps possible</dt><dd id="s-opt">&mdash;</dd></div>
+      <div class="stat"><dt>Ratio</dt><dd id="s-rat" class="hot">&mdash;</dd></div>
+      <div class="stat"><dt>Open cells touched</dt><dd id="s-cov">&mdash;</dd></div>
+    </dl></div>
+    <div class="block"><h2>Legend</h2><div class="legend">
+      <div><span class="sw" style="background:var(--lamp)"></span>Just expanded</div>
+      <div><span class="sw" style="background:var(--cooled)"></span>Expanded earlier</div>
+      <div><span class="sw" style="background:var(--lead)"></span>On the frontier</div>
+      <div><span class="sw" style="background:var(--chalk)"></span>Route back to the start</div>
+      <div><span class="sw" style="background:var(--grass)"></span>The path it found</div>
+      <div><span class="sw" style="background:var(--void);outline:1px solid var(--rule)"></span>Corridor, cost 1</div>
+      <div><span class="sw" style="background:rgb(51,40,60)"></span>Corridor, cost 9 (digits shade between)</div>
+      <div><span class="sw" style="background:var(--mass)"></span>Wall</div>
+    </div></div>
+    <div class="block"><h2>Reading it</h2>
+      <p class="note">The bright rope is the route from the current cell back to the start &mdash; for a stack-based search that is exactly what the frontier would have to unwind through. When it snaps backwards, that is a <b>backtrack</b>.</p>
+      <p class="note">The blue band is every cell pushed but not yet popped. Watch how wide it gets: that is what <b>max frontier</b> measures, and it is the memory your search actually costs. When the goal is reached the trail dims and the route it settled on is drawn in green.</p>
+    </div>
+    <div class="drop" id="drop" tabindex="0" role="button">Drop another .trace<input type="file" id="file" accept=".trace,.txt" hidden></div>
+  </aside>
+</div>
+
+<script type="text/plain" id="payload">__TRACE_PAYLOAD__</script>
+<script>
+const DR=[-1,0,1,0], DC=[0,1,0,-1];
+
+// Incremental parser. The same code handles a file dropped in one lump and a
+// search arriving a few events at a time over the wire.
+function newStream(){
+  return {grid:[],S:[0,0],G:[0,0],ev:[],path:[],algo:'search',inst:'',R:0,C:0,
+          rest:'',mapLeft:0,inEvents:false,ready:false,complete:false};
+}
+function feed(S,text){
+  S.rest+=text;
+  let nl, grew=false;
+  while((nl=S.rest.indexOf('\n'))>=0){
+    const line=S.rest.slice(0,nl); S.rest=S.rest.slice(nl+1);
+    if(S.mapLeft>0){ S.grid.push(line); if(--S.mapLeft===0) S.ready=true; continue; }
+    if(S.inEvents){
+      if(!line) continue;
+      const p=line.split(/\s+/);
+      switch(p[0]){
+        case 'E': S.ev.push({t:1,r:+p[1],c:+p[2],p:(+p[3]<0?-1:(+p[3])*S.C+(+p[4]))}); grew=true; break;
+        case 'P': S.ev.push({t:2,r:+p[1],c:+p[2],g:+p[3]||0}); grew=true; break;
+        case 'D': S.ev.push({t:3,r:+p[1],c:+p[2]}); grew=true; break;
+        case 'R': S.ev.push({t:4,r:+p[1],c:+p[2],g:+p[3]||0,p:(+p[4])*S.C+(+p[5])}); grew=true; break;
+        case 'W': S.path.push((+p[1])*S.C+(+p[2])); break;
+        case 'RESULT': S.complete=true; break;
+      }
+      continue;
+    }
+    const t=line.trim();
+    if(t.startsWith('ALGORITHM ')) S.algo=t.slice(10).trim();
+    else if(t.startsWith('INSTANCE ')) S.inst=t.slice(9).trim();
+    else if(t.startsWith('GRID ')){const p=t.split(/\s+/);S.R=+p[1];S.C=+p[2];}
+    else if(t==='MAP') S.mapLeft=S.R;
+    else if(t.startsWith('START ')){const p=t.split(/\s+/);S.S=[+p[1],+p[2]];}
+    else if(t.startsWith('GOAL ')){const p=t.split(/\s+/);S.G=[+p[1],+p[2]];}
+    else if(t==='EVENTS') S.inEvents=true;
+  }
+  return grew;
+}
+function parseTrace(text){ const S=newStream(); feed(S,text); return S; }
+
+function bfsOptimal(grid,S,G){
+  const R=grid.length,C=grid[0].length,idx=(r,c)=>r*C+c;
+  const d=new Int32Array(R*C).fill(-1);
+  let q=[idx(S[0],S[1])]; d[q[0]]=0;
+  while(q.length){const n2=[];
+    for(const n of q){const r=(n/C)|0,c=n%C;
+      for(let k=0;k<4;k++){const nr=r+DR[k],nc=c+DC[k];
+        if(nr<0||nr>=R||nc<0||nc>=C||grid[nr][nc]==='#')continue;
+        if(d[idx(nr,nc)]!==-1)continue; d[idx(nr,nc)]=d[n]+1; n2.push(idx(nr,nc));}}
+    q=n2;}
+  return d[idx(G[0],G[1])];
+}
+
+const tileCost=ch=>(ch>='1'&&ch<='9')?(+ch):1;
+// Corridor colour by cost: bare floor stays black, dear ground lifts toward a
+// muted mauve. Subtle on purpose -- the search overlays stay in charge.
+const FLOOR=(()=>{const a=[4,5,10],b=[51,40,60],o={};
+  for(let d=1;d<=9;d++){const t=(d-1)/8;
+    o[String(d)]=`rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;}
+  o['.']=o['1']; return o;})();
+
+const map=document.getElementById('map'),mctx=map.getContext('2d');
+const rib=document.getElementById('depth'),rctx=rib.getContext('2d');
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RATES=[{l:'1&times;',v:60},{l:'2&times;',v:120},{l:'4&times;',v:260},
+             {l:'8&times;',v:700},{l:'Max',v:Infinity}];
+let rate=1;
+let M=null,st=null,cursor=0,playing=false,acc=0,last=0,raf=null;
+
+const RAMP=(()=>{const a=[122,61,28],b=[240,169,59],o=[];
+  for(let i=0;i<24;i++){const t=i/23;
+    o.push(`rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`);}
+  return o;})();
+
+function load(src){
+  if(!src.ready) { document.getElementById('warn').textContent='This trace has no MAP block.'; return; }
+  const R=src.grid.length,C=src.grid[0].length;
+  M=src; M.R=R; M.C=C;
+  M.open=src.grid.reduce((n,r)=>n+[...r].filter(ch=>ch!=='#').length,0);
+  M.opt=bfsOptimal(src.grid,src.S,src.G);
+  M.window=Math.min(400,Math.max(60,Math.round(M.open/18)));
+  M.depthOf=new Int32Array(R*C); M.profile=[]; M.profiled=0; M.maxDepth=1;
+  document.getElementById('algo').textContent=src.algo;
+  document.getElementById('inst').textContent=src.inst;
+  reset(); extend(); sizeAll(); draw();
+}
+
+// Bring the depth profile and the scrubber range up to date with however
+// many events have arrived so far.
+function extend(){
+  for(;M.profiled<M.ev.length;M.profiled++){
+    const e=M.ev[M.profiled]; if(e.t!==1) continue;
+    const n=e.r*M.C+e.c;
+    M.depthOf[n]=e.p<0?0:M.depthOf[e.p]+1;
+    M.profile.push(M.depthOf[n]);
+    if(M.depthOf[n]>M.maxDepth) M.maxDepth=M.depthOf[n];
+  }
+  document.getElementById('tot').textContent=M.ev.length.toLocaleString();
+  document.getElementById('scrub').max=Math.max(1,M.ev.length);
+}
+
+function reset(){
+  st={visited:new Uint8Array(M.R*M.C),parent:new Int32Array(M.R*M.C).fill(-1),
+      when:new Int32Array(M.R*M.C).fill(-1),pend:new Int32Array(M.R*M.C),
+      depth:new Int32Array(M.R*M.C),gval:new Int32Array(M.R*M.C),
+      head:-1,expanded:0,frontier:0,maxFrontier:0,back:0,relax:0,prev:-1};
+  cursor=0;
+}
+
+function step(){
+  const e=M.ev[cursor],n=e.r*M.C+e.c;
+  if(e.t===2){ st.pend[n]++; st.frontier++; st.gval[n]=e.g; }
+  else if(e.t===3){ st.pend[n]--; st.frontier--; }
+  else if(e.t===4){ st.pend[n]++; st.frontier++; st.parent[n]=e.p; st.gval[n]=e.g; st.relax++; }
+  else { st.pend[n]--; st.frontier--; st.visited[n]=1; st.parent[n]=e.p;
+         st.when[n]=st.expanded; st.depth[n]=e.p<0?0:st.depth[e.p]+1;
+         if(st.prev!==-1&&e.p!==st.prev) st.back++;
+         st.prev=n; st.head=n; st.expanded++; }
+  if(st.frontier>st.maxFrontier) st.maxFrontier=st.frontier;
+  cursor++;
+}
+function seek(t){ if(t<cursor) reset(); while(cursor<t&&cursor<M.ev.length) step(); }
+
+function sizeAll(){
+  for(const [cv,ctx] of [[map,mctx],[rib,rctx]]){
+    const d=devicePixelRatio||1,b=cv.getBoundingClientRect();
+    cv.width=Math.max(1,Math.round(b.width*d));
+    cv.height=Math.max(1,Math.round(b.height*d));
+    ctx.setTransform(d,0,0,d,0,0);
+  }
+}
+
+function draw(){
+  if(!M) return;
+  const b=map.getBoundingClientRect(),pad=14;
+  const cs=Math.max(2,Math.floor(Math.min((b.width-pad*2)/M.C,(b.height-pad*2)/M.R)));
+  const ox=Math.round((b.width-cs*M.C)/2),oy=Math.round((b.height-cs*M.R)/2);
+  mctx.clearRect(0,0,b.width,b.height);
+
+  for(let r=0;r<M.R;r++){ const row=M.grid[r];
+    for(let c=0;c<M.C;c++){
+      mctx.fillStyle = row[c]==='#' ? '#181D3B' : (FLOOR[row[c]]||FLOOR['.']);
+      mctx.fillRect(ox+c*cs,oy+r*cs,cs,cs);
+    } }
+
+  // The trail is drawn along the corridor, not as filled cells: one stroke
+  // from every expanded cell back to the one it came from. Segments are
+  // batched into shade buckets so this stays 24 strokes, not thousands.
+  const w=M.window, cx=n=>ox+(n%M.C)*cs+cs/2, cy=n=>oy+((n/M.C)|0)*cs+cs/2;
+  const settled = M.complete && cursor>=M.ev.length && M.path.length;
+  const buckets=Array.from({length:24},()=>[]);
+  for(let n=0;n<st.when.length;n++){
+    if(st.when[n]<0) continue;
+    const age=st.expanded-st.when[n];
+    buckets[age>=w?0:Math.round((1-age/w)*23)].push(n);
+  }
+  mctx.lineWidth=Math.max(1.2,cs*0.56); mctx.lineCap='round'; mctx.lineJoin='round';
+  for(let k=0;k<24;k++){
+    const list=buckets[k]; if(!list.length) continue;
+    mctx.strokeStyle=RAMP[k];
+    mctx.globalAlpha=(k===0?0.5:0.5+0.5*(k/23))*(settled?0.5:1);
+    mctx.beginPath();
+    for(const n of list){
+      const p=st.parent[n];
+      if(p<0){ mctx.moveTo(cx(n),cy(n)); mctx.lineTo(cx(n)+0.01,cy(n)); continue; }
+      mctx.moveTo(cx(p),cy(p)); mctx.lineTo(cx(n),cy(n));
+    }
+    mctx.stroke();
+  }
+  mctx.globalAlpha=1;
+
+  // The frontier is drawn as whole cells so neighbouring ones merge into a
+  // continuous band -- it reads as the boundary it actually is, rather than
+  // as a scatter of dots.
+  mctx.fillStyle='#7CC4FF';
+  for(let n=0;n<st.pend.length;n++){
+    if(st.pend[n]<=0||st.visited[n]) continue;
+    mctx.fillRect(ox+(n%M.C)*cs,oy+((n/M.C)|0)*cs,cs,cs);
+  }
+
+  if(st.head>=0 && !settled){
+    mctx.strokeStyle='#F3E4C6'; mctx.lineWidth=Math.max(1,cs*0.20);
+    mctx.lineJoin='round'; mctx.lineCap='round'; mctx.globalAlpha=0.72;
+    mctx.beginPath();
+    let n=st.head,first=true,guard=0;
+    while(n!==-1&&guard++<M.R*M.C){
+      const x=ox+(n%M.C)*cs+cs/2,y=oy+((n/M.C)|0)*cs+cs/2;
+      first?mctx.moveTo(x,y):mctx.lineTo(x,y); first=false; n=st.parent[n];
+    }
+    mctx.stroke(); mctx.globalAlpha=1;
+    const hx=ox+(st.head%M.C)*cs+cs/2,hy=oy+((st.head/M.C)|0)*cs+cs/2;
+    mctx.save(); mctx.beginPath(); mctx.rect(ox,oy,cs*M.C,cs*M.R); mctx.clip();
+    const g=mctx.createRadialGradient(hx,hy,0,hx,hy,cs*4.5);
+    g.addColorStop(0,'rgba(240,169,59,.50)'); g.addColorStop(1,'rgba(240,169,59,0)');
+    mctx.fillStyle=g; mctx.beginPath(); mctx.arc(hx,hy,cs*4.5,0,6.2832); mctx.fill();
+    mctx.restore();
+    mctx.fillStyle='#FFF3D6'; mctx.beginPath();
+    mctx.arc(hx,hy,Math.max(1.6,cs*0.34),0,6.2832); mctx.fill();
+  }
+  if(settled){
+    // dark backing first, so the route stays legible over the warm trail
+    mctx.lineJoin='round'; mctx.lineCap='round';
+    mctx.lineWidth=Math.max(2,cs*0.74); mctx.strokeStyle='rgba(4,5,10,.85)';
+    mctx.beginPath();
+    M.path.forEach((n,i)=>i?mctx.lineTo(cx(n),cy(n)):mctx.moveTo(cx(n),cy(n)));
+    mctx.stroke();
+    mctx.lineWidth=Math.max(1.4,cs*0.52); mctx.strokeStyle='#22C55E';
+    mctx.beginPath();
+    M.path.forEach((n,i)=>i?mctx.lineTo(cx(n),cy(n)):mctx.moveTo(cx(n),cy(n)));
+    mctx.stroke();
+  }
+  marker(M.S[0],M.S[1],'#7CC4FF',ox,oy,cs);
+  marker(M.G[0],M.G[1],'#F0A93B',ox,oy,cs);
+  drawRibbon(); readout();
+}
+
+function marker(r,c,col,ox,oy,cs){
+  const x=ox+c*cs+cs/2, y=oy+r*cs+cs/2, rad=Math.max(5,cs*0.85);
+  mctx.fillStyle=col; mctx.beginPath(); mctx.arc(x,y,rad,0,6.2832); mctx.fill();
+  mctx.strokeStyle='#04050A'; mctx.lineWidth=Math.max(1.4,rad*0.30);
+  mctx.beginPath(); mctx.arc(x,y,rad*0.40,0,6.2832); mctx.stroke();
+}
+
+function drawRibbon(){
+  const b=rib.getBoundingClientRect(); rctx.clearRect(0,0,b.width,b.height);
+  const p=M.profile; if(!p.length) return;
+  const W=b.width,H=b.height,top=20,base=H-8;
+  rctx.beginPath(); rctx.moveTo(0,base);
+  for(let x=0;x<W;x++){ const i=Math.min(p.length-1,Math.floor(x/W*p.length));
+    rctx.lineTo(x,base-(p[i]/M.maxDepth)*(base-top)); }
+  rctx.lineTo(W,base); rctx.closePath();
+  const grd=rctx.createLinearGradient(0,top,0,base);
+  grd.addColorStop(0,'rgba(240,169,59,.30)'); grd.addColorStop(1,'rgba(240,169,59,.03)');
+  rctx.fillStyle=grd; rctx.fill();
+  rctx.strokeStyle='rgba(240,169,59,.55)'; rctx.lineWidth=1; rctx.stroke();
+  const cx=(st.expanded/Math.max(1,p.length))*W;
+  rctx.strokeStyle='#E8DCC4'; rctx.globalAlpha=.8;
+  rctx.beginPath(); rctx.moveTo(cx,top-8); rctx.lineTo(cx,base); rctx.stroke();
+  rctx.globalAlpha=1;
+  rctx.fillStyle='#8B7A69'; rctx.font='500 10px "IBM Plex Mono",monospace';
+  rctx.textAlign='right'; rctx.fillText('max '+M.maxDepth,W-10,17);
+}
+
+function readout(){
+  const q=i=>document.getElementById(i);
+  q('s-exp').textContent=st.expanded.toLocaleString();
+  q('s-fro').textContent=st.frontier.toLocaleString();
+  q('s-max').textContent=st.maxFrontier.toLocaleString();
+  q('s-dep').textContent=(st.head>=0?st.depth[st.head]:0).toLocaleString();
+  q('s-bak').textContent=st.back.toLocaleString();
+  q('s-rel').textContent=st.relax.toLocaleString();
+  q('pos').textContent=cursor.toLocaleString();
+  q('scrub').value=cursor;
+  const done=M.complete&&cursor>=M.ev.length&&M.path.length;
+  if(done){
+    let cost=0;
+    for(let i=1;i<M.path.length;i++){
+      const n=M.path[i],ch=M.grid[(n/M.C)|0][n%M.C];
+      cost+=tileCost(ch);
+    }
+    q('s-cost').textContent=cost.toLocaleString();
+    q('s-len').textContent=(M.path.length-1).toLocaleString();
+    q('s-opt').textContent=M.opt.toLocaleString();
+    q('s-rat').textContent=((M.path.length-1)/M.opt).toFixed(2)+'\u00d7';
+    q('s-cov').textContent=Math.round(st.expanded/M.open*100)+'%';
+  }else{
+    for(const i of ['s-cost','s-len','s-opt','s-rat','s-cov']) q(i).textContent='\u2014';
+  }
+}
+
+function tick(now){
+  if(!playing){raf=null;return;}
+  const dt=Math.min(0.1,(now-last)/1000); last=now;
+  const r=RATES[rate].v;
+  let n = r===Infinity ? 20000 : (acc+=dt*r, Math.floor(acc));
+  if(r!==Infinity) acc-=n;
+  for(let i=0;i<n&&cursor<M.ev.length;i++) step();
+  draw();
+  if(cursor>=M.ev.length){playing=false;document.getElementById('play').textContent='Replay';raf=null;return;}
+  raf=requestAnimationFrame(tick);
+}
+function setPlaying(p){
+  playing=p; document.getElementById('play').textContent=p?'Pause':(cursor>=M.ev.length?'Replay':'Play');
+  if(p){ last=performance.now(); acc=0; if(!raf) raf=requestAnimationFrame(tick); }
+}
+
+const ratesEl=document.getElementById('rates');
+RATES.forEach((r,i)=>{const b=document.createElement('button');
+  b.innerHTML=r.l; b.setAttribute('aria-pressed',i===rate?'true':'false');
+  b.onclick=()=>{rate=i;[...ratesEl.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i?'true':'false'));acc=0;};
+  ratesEl.appendChild(b);});
+
+document.getElementById('play').onclick=()=>{ if(cursor>=M.ev.length) reset(); setPlaying(!playing); };
+document.getElementById('fwd').onclick=()=>{ setPlaying(false); if(cursor<M.ev.length){step();draw();} };
+document.getElementById('back').onclick=()=>{ setPlaying(false); seek(Math.max(0,cursor-1)); draw(); };
+document.getElementById('scrub').oninput=e=>{ setPlaying(false); seek(+e.target.value); draw(); };
+addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault();document.getElementById('play').click();}
+  else if(e.key==='ArrowRight'){e.preventDefault();document.getElementById('fwd').click();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();document.getElementById('back').click();}
+});
+addEventListener('resize',()=>{sizeAll();draw();});
+
+
+const drop=document.getElementById('drop'),fileIn=document.getElementById('file');
+drop.onclick=()=>fileIn.click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')fileIn.click();};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');
+  const f=e.dataTransfer.files[0]; if(f) readFile(f);};
+fileIn.onchange=e=>{const f=e.target.files[0]; if(f) readFile(f);};
+function readFile(f){const fr=new FileReader();
+  fr.onload=()=>{ setPlaying(false); load(parseTrace(fr.result)); drop.textContent=f.name; };
+  fr.readAsText(f);}
+
+// ---------------------------------------------------------------- live mode
+let following=true;
+function setFollow(v){
+  following=v;
+  const b=document.getElementById('follow');
+  if(b) b.setAttribute('aria-pressed',v?'true':'false');
+}
+
+async function liveLoop(){
+  const S=newStream(); let offset=0, booted=false, finished=false;
+  document.getElementById('warn').textContent='live';
+  while(true){
+    let grew=false;
+    try{
+      const r=await fetch('/events?from='+offset,{cache:'no-store'});
+      const t=await r.text();
+      if(t.length){ offset+=t.length; grew=feed(S,t); }
+      if(!finished){
+        const st=await (await fetch('/status',{cache:'no-store'})).text();
+        if(st.trim()==='done'&&!t.length) finished=true;
+      }
+    }catch(e){ finished=true; }
+
+    if(!booted&&S.ready){ load(S); booted=true; setFollow(true); }
+    else if(booted&&grew){
+      extend();
+      if(following){ seek(M.ev.length); draw(); }
+      else readout();
+    }
+    if(finished){
+      document.getElementById('warn').textContent='';
+      if(booted&&following){ extend(); seek(M.ev.length); draw(); }
+      setPlaying(false);
+      navigator.sendBeacon&&navigator.sendBeacon('/quit');
+      break;
+    }
+    await new Promise(r=>setTimeout(r,80));
+  }
+}
+
+(function(){
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    const b=document.createElement('button');
+    b.id='follow'; b.textContent='Follow'; b.setAttribute('aria-pressed','true');
+    b.onclick=()=>{ setFollow(!following); if(following){ setPlaying(false); seek(M.ev.length); draw(); } };
+    document.getElementById('play').after(b);
+    document.getElementById('scrub').addEventListener('input',()=>setFollow(false));
+    addEventListener('beforeunload',()=>navigator.sendBeacon&&navigator.sendBeacon('/quit'));
+    liveLoop();
+    return;
+  }
+  const raw=document.getElementById('payload').textContent;
+  if(!raw||raw.indexOf('EVENTS')<0){
+    document.getElementById('warn').textContent='No trace inlined — drop a .trace file.';
+    return;
+  }
+  load(parseTrace(raw));
+  if(!reduce) setPlaying(true);
+})();
+</script>
+</body>
+</html>

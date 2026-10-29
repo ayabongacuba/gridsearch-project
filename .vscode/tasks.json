@@ -1,0 +1,87 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build: all stages",
+      "type": "shell",
+      "command": "make",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "build: current stage",
+      "type": "shell",
+      "command": "make bin/${fileBasenameNoExtension}",
+      "problemMatcher": ["$gcc"],
+      "detail": "Builds whichever src/*.cpp you have open."
+    },
+    {
+      "label": "test: all",
+      "type": "shell",
+      "command": "make test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": ["$gcc"],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "test: current stage",
+      "type": "shell",
+      "command": "make test-${fileBasenameNoExtension}",
+      "group": "test",
+      "problemMatcher": ["$gcc"],
+      "detail": "Runs the tests for whichever src/*.cpp you have open."
+    },
+    {
+      "label": "run: current stage, browser replay",
+      "type": "shell",
+      "command": "./run ${fileBasenameNoExtension} ${input:map}",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "run: current stage, native window",
+      "type": "shell",
+      "command": "./run ${fileBasenameNoExtension} ${input:map} --window",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "run: compare all four",
+      "type": "shell",
+      "command": "./run compare ${input:map}",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "check: current stage against expected/",
+      "type": "shell",
+      "command": "./check ${fileBasenameNoExtension}",
+      "problemMatcher": [],
+      "detail": "Diffs your output against the reference, map by map."
+    },
+    {
+      "label": "check: all stages",
+      "type": "shell",
+      "command": "./check",
+      "problemMatcher": []
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "make clean",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "map",
+      "type": "pickString",
+      "description": "Which map?",
+      "default": "m05",
+      "options": [
+        "m01", "m02", "m03", "m04", "m05", "m06", "m07", "m08", "m09",
+        "t01", "t02", "t03", "t04", "t05",
+        "w01", "w02", "w03", "w04", "w05", "w06", "w07",
+        "e01", "e02", "e03", "e04", "e05"
+      ]
+    }
+  ]
+}
