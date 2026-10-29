@@ -114,3 +114,28 @@ Changed by me: I ran `./run bfs t02` and `./run dijkstra t02` in my terminal. I 
 Asked: My code crashes when I try to trace the path back. The start cell parent is (-1, -1) and my loop breaks. How do I fix this? Can you update the HTML notes with a picture of the parent array?
 Got:   Showed me the `if` check for `-1`. Added a simple diagram of the parent array to the HTML notes so I can see the chain from the goal to the start.
 Changed by me: I added the check `if (p.r == -1 && p.c == -1)` inside my `while` loop. I ran the test for the `e03-adjacent-11` map (start next to goal) and it doesn't crash anymore.
+
+## 25 October 2026 — ChatGPT
+Asked: I am starting Stage 4 (A*). I am very confused about the formula `f = g + h`. Can you make HTML notes with diagrams to explain what `g` and `h` mean? Also, why is Manhattan distance the correct `h`?
+Got:   Created HTML notes with a picture of a grid showing `g` (cost so far), `h` (straight line distance to goal), and `f` (the total). Explained that Manhattan distance is `|r1 - r2| + |c1 - c2|` and showed why it never overestimates.
+Changed by me: I read the notes and drew the `g`, `h`, `f` on a small map on paper. I wrote the `h` function in my code using standard `if` statements and `std::abs` math. I tested it on a 3x3 open room and the search went straight to the goal.
+
+## 25 October 2026 — ChatGPT
+Asked: I am confused about the `dist` array. In Dijkstra, `dist` was the total cost. In A*, the notes say I must keep `dist` as only `g`, not `f`. But the priority queue uses `f`. Why? If I put `f` in `dist`, my test fails with a wrong cost.
+Got:   Explained that `dist` must hold the real cost to enter the cell (`g`). If we put `f` in `dist`, we are adding the guess to the real cost, and the final path cost will be wrong. Added a diagram in the HTML notes showing the difference between the queue (which uses `f`) and the `dist` array (which uses `g`).
+Changed by me: I changed my code to save `new_g` in the `dist` array, but I used `new_g + h(...)` for the priority queue. I tested it and my final cost is now correct.
+
+## 25 October 2026 — ChatGPT
+Asked: In Dijkstra, I never used `trace::relax`. But the test for A* says "unlike Dijkstra A* does find cheaper routes to known cells". Why does A* need a relax event? Please explain with a drawing in the HTML notes.
+Got:   Added a new section to the notes with a drawing. Explained that because A* pops by `f` (g + h), it might pop a cell with a high `g` but very low `h` before a cell with a low `g` but high `h`. This means we can find a cheaper path to a cell that is already on the frontier. The `relax` hook fires when this happens.
+Changed by me: I added a check `if (dist[nbr_idx] < INF)` to know if the cell was already on the frontier. If it was, I call `trace::relax`. I ran the test and saw the relax events were happening.
+
+## 25 October 2026 — ChatGPT
+Asked: What does "admissible" mean? The handout says Manhattan distance is admissible. Does that mean it is always correct? What happens if I use a different formula that overestimates?
+Got:   Explained that admissible means the guess is never bigger than the real cost. If it overestimates, A* might think a path is too expensive and skip it, even if it is the cheapest path. So the search would return a wrong answer. Added a drawing of an overestimating guess in the notes.
+Changed by me: I wrote a comment in my code above the `h` function explaining that Manhattan distance is admissible because you can only move N, E, S, W. I checked the test `Manhattan distance never overestimates` and it passed.
+
+## 25 October 2026 — ChatGPT
+Asked: My code is failing the `[work]` test that says "on an open map it commits to far fewer cells than Dijkstra". My `expanded` is almost the same as Dijkstra. Why is my search not saving work? Is my `h` returning 0 by mistake?
+Got:   Explained that if `h` returns 0, it is just Dijkstra. I should check my `h` function to make sure it is calculating the distance. Also, the tie-breaking in the queue must be exactly correct, otherwise it spreads out like Dijkstra.
+Changed by me: I printed my `h` value for the start cell and saw it was not 0. I looked at my `CompareState` struct and saw I forgot to add the tie-breaking for the row and column. I fixed it, and my `expanded` dropped below 880 on the cave map. The test passed.
