@@ -165,3 +165,28 @@ Asked: The `useFloyd == false` part needs to call my Stage 3 Dijkstra. How does 
 Got:   Explained that the Makefile is already set up to link `floyd.cpp` with `dijkstra.cpp`. The driver `main_matrix.cpp` handles this. I just need to call `search(g, way[i], way[j])` inside a loop. Added the linking diagram to the HTML notes.
 Changed by me: I wrote the loop to call `search()` for every pair of waypoints. I tested it, and the test `Floyd-Warshall and repeated Dijkstra produce the same table` passed, proving both methods work.
 
+## 27 October 2026 — ChatGPT
+Asked: I am starting Stage 6 (TSP). I don't understand how `std::next_permutation` works. The project says we must start with [1, 2, ..., K-1] and try every order. Can you make HTML notes with a drawing showing how the permutation changes step by step?
+Got:   Created HTML notes with a picture showing the vector `[1, 2, 3]` changing to `[1, 3, 2]`, then `[2, 1, 3]`, and so on. Explained that `next_permutation` rearranges the numbers in the vector in alphabetical/numerical order until it reaches the largest one.
+Changed by me: I read the notes and traced the numbers on paper. I wrote the `do { ... } while (std::next_permutation(...) == true)` loop. I tested it on a map with 3 stops, and my `candidates` count was 2 (which is (3-1)! = 2).
+
+## 27 October 2026 — ChatGPT
+Asked: In my loop, I calculate the cost of the legs, but I am not sure how to handle the INF. If a leg is INF, it means it is impossible to walk there. What should I do? Should I skip just that leg or the whole tour?
+Got:   Explained that if even one leg is INF, the whole tour is impossible. So we must skip that whole ordering. Added a diagram to the HTML notes showing a broken path with a wall in the middle.
+Changed by me: I added a boolean flag called `has_inf`. If I find an INF in the loop, I set it to true and `break`. Then I use `if (has_inf == true) { continue; }` to skip to the next permutation. I tested this on the sealed map `e01` and it correctly returned INF.
+
+## 27 October 2026 — ChatGPT
+Asked: The instructions say I must replace the best tour only when a candidate is strictly cheaper (`<`). Why not `<=`? What happens if there are two paths with the exact same cost?
+Got:   Explained that the marker compares the exact order of the tour. If I use `<=`, I will replace the first cheapest tour with the second cheapest tour that has the same cost. This will change the order and fail the exact match test. Added a small graph to the notes showing two equal paths.
+Changed by me: I made sure my code only has `if (current_cost < best.cost)`. I tested it on the `w01` map and the order matched the reference exactly (0 1 4 2 5 3 0).
+
+## 27 October 2026 — ChatGPT
+Asked: The test says "a single stop is a tour of cost zero". But my code crashes when K=1 because the permutation vector is empty. How do I handle this edge case? Also, what about K=2?
+Got:   Explained that if K=1, there are no other stops to visit, so the cost is 0. If K=2, there is only one permutation. Added a flow diagram to the notes for the K=1 case.
+Changed by me: I added `if (k == 1) { best.cost = 0; best.order = {0, 0}; return best; }` at the top of my function. I tested it on the `e04-same-11` map and it passed.
+
+## 27 October 2026 — ChatGPT
+Asked: I forgot to add the leg back to the depot. My tour was ending at the last stop, not coming back to 0. I got a wrong cost. How do I fix it? The notes didn't make it clear enough that we need to return.
+Got:   Updated the notes with a big red arrow showing the return trip to the start. Showed me how to add `m.at(prev, 0)` after the loop.
+Changed by me: I added the return leg `current_cost = current_cost + m.at(prev, 0)`. I also made sure to push the `0` at the end of the `best.order` vector. My cost is now exactly the same as the test expected.
+

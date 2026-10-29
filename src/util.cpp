@@ -147,6 +147,15 @@ std::vector<std::string> renderPath(const Grid &g,
                                     const std::vector<Cell> &path) {
     std::vector<std::string> result = g.map;
 
+    if (path.size() == 0) {
+        return result;
+    }
+
+    if (path.size() == 1) {
+        result[path[0].r][path[0].c] = 'G';
+        return result;
+    }
+
     for (size_t i = 0; i < path.size(); ++i) {
         int r = path[i].r;
         int c = path[i].c;
@@ -156,16 +165,16 @@ std::vector<std::string> renderPath(const Grid &g,
         } else if (i == path.size() - 1) {
             result[r][c] = 'G';
         } else {
-            int pr = path[i - 1].r;
-            int pc = path[i - 1].c;
+            int nr = path[i + 1].r;
+            int nc = path[i + 1].c;
 
-            if (r < pr) {
+            if (nr < r) {
                 result[r][c] = '^';
-            } else if (r > pr) {
+            } else if (nr > r) {
                 result[r][c] = 'v';
-            } else if (c < pc) {
+            } else if (nc < c) {
                 result[r][c] = '<';
-            } else if (c > pc) {
+            } else if (nc > c) {
                 result[r][c] = '>';
             }
         }
