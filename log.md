@@ -44,3 +44,24 @@ Changed by me: I implemented both functions using basic `if/else` logic for the 
 Asked: When I ran `make test-util`, it gave me this error: `/bin/sh: 1: pkg-config: not found`. What does this mean and how do I fix it?
 Got:   Explained that the Makefile checks for `pkg-config` to see if the optional SDL2 visualiser library is installed. Since Ubuntu was fresh, it wasn't installed. Told me to run `sudo apt install pkg-config` and then run `make clean` to clear the half-finished build.
 Changed by me: I installed `pkg-config`, ran `make clean`, and ran `make test-util` again. It compiled successfully and printed "All tests passed (74 assertions in 13 test cases)". I then pushed all my Stage 0 code to GitHub.
+
+## 23 October 2026 — ChatGPT
+Asked: I am starting Stage 1 (DFS). I am using a `std::vector` as a stack. I know that `push_back` adds to the end and `pop_back` removes from the end (LIFO). But if I push the neighbours in the N, E, S, W order, why does the algorithm explore West first?
+Got:   Explained that because a stack is Last-In-First-Out, the last item pushed is the first one popped. Since West is pushed last (N, E, S, W), West ends up on top of the stack and gets popped first.
+Changed by me: I tested this by writing a small `for` loop to push N, E, S, W and printed the stack. I saw that West was at the back of the vector. I made sure my loop iterates from 0 to 3 using the `DR[]` and `DC[]` arrays so the order is exactly correct.
+
+## 23 October 2026 — ChatGPT
+Asked: In DFS, why do we mark a cell as visited when we POP it from the stack, and not when we PUSH it? I remember in BFS we mark on push. What is the difference, and how does `trace::discard` fit into this?
+Got:   Explained that in DFS, a cell can be pushed multiple times before it is ever popped. If we mark it on push, we might miss a shorter path or block a valid route. So we wait until it is popped to mark it. If we pop a cell and see it is already visited, it means it was a duplicate entry, so we throw it away using `trace::discard`.
+Changed by me: I implemented the visited check exactly at the top of the `while` loop. If `visited[curr_idx] == true`, I call `trace::discard` and `continue` to skip it. I tested this on the `m04-rooms-35` map and saw that the `discard` hook was being called, which matched the test expectations.
+
+## 23 October 2026 — ChatGPT
+Asked: I am trying to reconstruct the path from the goal back to the start using the parent array. But when I trace it back, the start cell has a parent of -1, so my loop gets stuck or crashes. How do I write the while loop safely?
+Got:   Explained that we need to store the parent inside the stack entry itself (like a struct with `cell` and `parent`). Then, when we pop the cell, we save the parent into the `parent_cells` array. When reconstructing, we loop until we reach the start cell, not until we hit -1, because the start cell's parent is -1.
+Changed by me: I created a `StackItem` struct to hold both the cell and its parent. I wrote the while loop to break when the current cell equals the start cell. Then I used a `for` loop to reverse the path so it starts at the start and ends at the goal. I manually traced it on a 3x3 map to make sure it didn't include the start cell twice.
+
+## 23 October 2026 — ChatGPT
+Asked: The handout says DFS must be iterative, but my friend tried a recursive one to see what will happen and it worked on the small maps. We tried to discuss about the concept of recursion on the DFS and we knew the problem might be related to stack overflow since it is the common problem on recursions. Is really that? Why does the project explicitly forbid recursion? What happens if I use it?
+Got:   Explained that one of the test maps (`e02-corridor-41`) is a single corridor 798 cells long. A recursive DFS would call the function 798 times, which would overflow the call stack and crash the program. Also, `maxFrontier` is meant to measure the memory of the frontier, and if the frontier is the call stack, there is nothing to measure.
+Changed by me: I made sure my implementation is completely iterative using a `std::vector` as the stack. I ran the test on the `e02-corridor-41` map specifically to confirm it doesn't crash.
+
