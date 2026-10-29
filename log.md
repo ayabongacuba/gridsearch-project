@@ -190,3 +190,47 @@ Asked: I forgot to add the leg back to the depot. My tour was ending at the last
 Got:   Updated the notes with a big red arrow showing the return trip to the start. Showed me how to add `m.at(prev, 0)` after the loop.
 Changed by me: I added the return leg `current_cost = current_cost + m.at(prev, 0)`. I also made sure to push the `0` at the end of the `best.order` vector. My cost is now exactly the same as the test expected.
 
+## 27 October 2026 — ChatGPT
+Asked: I just finished writing all the code for Phase 1. The tests pass, but I need to run `./check` to compare my output exactly with the expected folder. What does `./check` do, and what should I look for in the output?
+Got:   Explained that `./check` runs my compiled code on all the maps and compares the exact printed route, cost, and steps with the lecturer's reference files. Told me to look for the green `ok` lines and investigate any red `FAIL` lines.
+Changed by me: I ran `./check` in my terminal. I saw green `ok` lines for floyd and tsp, but red `FAIL` lines for dfs, bfs, dijkstra, and astar. The error showed that my arrows were pointing the wrong direction.
+
+## 27 October 2026 — ChatGPT
+Asked: I got a FAIL on all the search stages. My tests passed, so why does `./check` fail? The error shows my arrows are wrong (e.g., `#G<<<<<^#` instead of `#G<<<<<<#`). What is wrong with my `renderPath` function?
+Got:   Looked at my `renderPath` code and identified the bug. I was comparing the current cell to the *previous* cell (`path[i - 1]`) instead of the *next* cell (`path[i + 1]`). So the arrow was pointing backwards. Also told me to handle `start == goal` by printing `G`.
+Changed by me: I rewrote the `renderPath` function. I changed `path[i - 1]` to `path[i + 1]`. I added an `if (path.size() == 1)` check at the top to print `G`. I ran `./check` again and all the FAIL lines turned to `ok`. All 85 checks passed.
+
+## 27 October 2026 — ChatGPT
+Asked: My whole Phase 1 is passing `./check` now. What should I do with GitHub to make sure my work is saved properly?
+Got:   Told me to run `git add .`, `git commit`, and `git push` to save my final Phase 1 code to my GitHub repository.
+Changed by me: I ran the git commands. I went to my GitHub page online and confirmed all my updated files were uploaded.
+
+## 27 October 2026 — ChatGPT
+Asked: I am starting Phase 2. I need to run the benchmarks to get the time and memory data so I can draw the plots for the quiz. What commands do I use, and what do they do?
+Got:   Explained that Phase 2 is not about writing new code, but measuring the code I already wrote. Told me to run `./run bench` to test my algorithms on the maps and save the data, and then `python3 bench/plot.py` to draw the 5 graphs.
+Changed by me: I ran `./run bench` in my terminal and waited for it to finish. Then I ran `python3 bench/plot.py`. I opened the `bench/plots/` folder in VS Code and saw the 5 PNG images.
+
+## 27 October 2026 — ChatGPT
+Asked: The benchmark finished and I have the results.csv file. Can you explain Plot 1 to me? Why is the DFS line so high and the BFS line so low? And why does the gap get smaller on the maze map m02?
+Got:   Explained that BFS explores layer by layer, so its frontier stays like a ring. DFS goes deep down one path, so it holds almost the whole map on its stack. On the maze map (m02), there is only one path, so there are no open areas for the DFS frontier to grow big.
+Changed by me: I looked at my results. For s41, BFS maxFrontier is 39, but DFS maxFrontier is 1134. For m02, DFS is 14 and BFS is 4.
+
+## 27 October 2026 — ChatGPT
+Asked: I see Plot 2 has a huge difference between Floyd-Warshall and repeated Dijkstra. Why is Floyd-Warshall so slow on these maps? What kind of graph would make Floyd-Warshall better?
+Got:   Explained that Floyd-Warshall does V*V*V work, which is huge. Repeated Dijkstra only runs Dijkstra K times. Floyd-Warshall is better on very dense graphs where every node is connected to many others.
+Changed by me: I checked the csv. On s41, Floyd-Warshall took 3,066,697 us, but repeated Dijkstra took only 11,771 us. I also noticed Floyd-Warshall needs a lot more memory (22076 KB vs 2 KB).
+
+## 27 October 2026 — ChatGPT
+Asked: In Plot 3, the gap between Dijkstra and A* gets smaller on rough ground. Why? I thought A* is always much faster.
+Got:   Explained that the Manhattan distance assumes every step costs 1. But on rough ground, the real cost is higher (like 9), so the guess is too small. This makes A* act more like Dijkstra, so it expands more cells.
+Changed by me: I looked at s41. Dijkstra expanded 1338 cells, but A* expanded only 820. The saving is still there, but not as big as on an open flat map.
+
+## 27 October 2026 — ChatGPT
+Asked: In Plot 4, why is BFS above Dijkstra, and why are Dijkstra and A* exactly the same? I also need the ratio of BFS cost to Dijkstra cost on s41.
+Got:   Explained that BFS takes the fewest steps, even if the path is expensive. Dijkstra and A* both find the cheapest route, so their cost is identical. Showed me how to calculate the ratio.
+Changed by me: I checked the csv. On s41, BFS cost is 245 and Dijkstra cost is 142. I calculated 245 / 142 = 1.72. So BFS costs 72% more than Dijkstra.
+
+## 27 October 2026 — ChatGPT
+Asked: Plot 5 shows a huge spike for brute force. How do I know when it passes 60 seconds, and what does the ratio mean? I need to know from which K the ratio starts behaving.
+Got:   Explained that the time passes 60 seconds at K=14 (it took 128.7 seconds). The ratio is the time for K divided by the time for K-1. It should get closer to K as K gets bigger.
+Changed by me: I calculated the ratios. K14 / K13 is 128.7 / 8.099 = 15.89. The ratio starts behaving like K once K is bigger than 12. Before K=12, the time is mostly just building the matrix, not the permutations.
