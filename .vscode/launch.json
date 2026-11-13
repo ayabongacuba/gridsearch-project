@@ -6,7 +6,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/${fileBasenameNoExtension}",
-      "args": ["--no-viz", "mazes/m05-caves-45.grid"],
+      "args": ["--no-viz", "maps/m05-caves-45.grid"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "externalConsole": false,
@@ -44,7 +44,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/bin/${fileBasenameNoExtension}",
-      "args": ["--no-viz", "mazes/m05-caves-45.grid"],
+      "args": ["--no-viz", "maps/m05-caves-45.grid"],
       "cwd": "${workspaceFolder}",
       "MIMode": "lldb",
       "preLaunchTask": "build: current stage"
