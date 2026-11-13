@@ -3,7 +3,6 @@
 *.o
 *.obj
 *.exe
-*.out
 
 # Generated visualisation replays and traces
 /runs/
