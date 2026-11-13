@@ -1,94 +1,217 @@
-# gridsearch — The Travelling Computer Scientist
+# Gridsearch — The Travelling Computer Scientist
 
-The travelling computer scientist. Seven stages, built on each other.
+A C++17 project for exploring pathfinding and multi-stop route planning on weighted grid maps, with interactive visualisations, automated tests, and performance benchmarks.
 
-```
-make                 build every stage
-make test            run every test
-./check              diff your output against expected/
-./run dfs m05        build, run, and watch it
-```
+Gridsearch models a map as a graph: walls block movement, open cells have entry costs, and waypoints mark locations to visit. It implements several search and optimisation algorithms so their routes, work, and trade-offs can be inspected and compared.
 
-## What you write
+## Features
 
-| stage | file | task |
-|---|---|---|
-| 0 | `src/util.cpp` | the map itself: `class Grid`, `readGrid`, `makeCostTable`, `renderPath`, `INF` |
-| 1 | `src/dfs.cpp` | find a route |
-| 2 | `src/bfs.cpp` | find the shortest route |
-| 3 | `src/dijkstra.cpp` | find the cheapest route |
-| 4 | `src/astar.cpp` | find it faster |
-| 5 | `src/floyd.cpp` | the cost between every pair of stops, two ways |
-| 6, 7 | `src/tsp.cpp` | the cheapest round trip |
+- **Four pathfinding algorithms:** Depth-First Search (DFS), Breadth-First Search (BFS), Dijkstra's algorithm, and A*.
+- **Waypoint cost matrices:** Floyd–Warshall and repeated Dijkstra searches.
+- **Multi-stop route planning:** exact travelling-salesperson search for smaller waypoint sets, with a nearest-neighbour and 2-opt heuristic for larger sets.
+- **Interactive visualisations:** browser replays, live search traces, side-by-side algorithm comparisons, and waypoint-tour views.
+- **Automated tests:** Catch2 tests plus output comparisons against reference results.
+- **Benchmark tools:** scripts for measuring search work, execution time, memory use, and tour candidates.
 
-Signatures are declared in `include/`. Stages 1–4 implement
-`Result search(const Grid&, Cell, Cell)`; Stage 5 implements
-`waypointMatrix`; Stages 6 and 7 implement `bestTour`.
+## Algorithms
 
-Everything links against your Stage 0, and Stages 5–7 also link against your
-Stage 3. A bug low down breaks everything above it.
+| Algorithm | Purpose |
+|---|---|
+| Depth-First Search (DFS) | Finds a valid route using a stack. It does not guarantee the shortest or cheapest route. |
+| Breadth-First Search (BFS) | Finds a route with the fewest steps when each move is treated equally. |
+| Dijkstra | Finds a minimum-cost route when cells have different entry costs. |
+| A* | Uses a Manhattan-distance heuristic to guide a minimum-cost search towards the goal. |
+| Floyd–Warshall | Computes shortest-path costs between all grid cells, then extracts the waypoint-to-waypoint costs. |
+| Repeated Dijkstra | Builds the waypoint cost matrix by running Dijkstra searches between waypoint pairs. |
+| Travelling Salesperson | Finds a closed tour that starts at waypoint 0, visits every other waypoint once, and returns to the start. |
 
-## Running
+For tours with up to 11 waypoints, the implementation checks every possible ordering. For larger waypoint sets, it uses a multi-start nearest-neighbour construction followed by 2-opt local improvement. The larger-instance method is a heuristic and is not guaranteed to find the global optimum.
 
-```
-./run dfs                    default map, browser replay
-./run bfs m05                any unique prefix of a map name
-./run dfs m07 --window       native window (needs SDL2)
-./run dfs m05 --live         browser opens first, search streams into it
-./run compare m05            all four side by side, stepped together
-./run astar t04 --render     also print the map with the route on it
-./run dijkstra t02 --no-viz  numbers only
-./run floyd w02 --fw         stage 5, Floyd-Warshall
-./run floyd w02 --dij        stage 5, repeated Dijkstra
-./run tsp w02                stage 6
-```
+## The Grid Model
 
-Replays are saved to `runs/` as standalone HTML files.
+A map is a rectangular grid with four-way movement (north, east, south, and west). Diagonal movement is not allowed.
 
-## Checking your work
+| Map character | Meaning | Cost to enter |
+|---|---|---:|
+| `#` | Wall; cannot be entered | — |
+| `.` | Open cell | 1 |
+| `1`–`9` | Open cell with a terrain cost | The displayed digit |
 
-```
-make test              every stage's tests
-make test-dfs          one stage
-./bin/test_dfs "[order]"   one group within a stage
+Movement cost is charged when entering a cell. The starting cell is not charged. This cost model is also why the waypoint cost matrix can be asymmetric: travelling from waypoint A to B does not necessarily have the same cost as travelling from B to A.
 
-./check                every stage against expected/
-./check dfs            one stage
-./check dfs m05        one map, showing which lines differ
-```
+Map files contain the grid dimensions, the rows of the map, and then a list of waypoint coordinates. Waypoint 0 is the start/depot; waypoint 1 is the goal for the single-destination searches.
 
-`expected/` holds two kinds of file per search stage per map. The `.out`
-files are what the program prints; `check` diffs against those, ignoring
-lines that legitimately vary between runs — timings, memory figures, how many
-orderings you examined. The `.seq` files are the full commit order, one cell
-per line. They never reach the program's output, so `check` can't see them;
-the `[order]` tests read them instead and tell you exactly which commit first
-disagrees.
+## Repository Structure
 
-`check` and the tests catch different things. Hooks in the wrong place with
-correct counters pass `check` and fail the tests. A tie-break that's right on
-a small room but wrong somewhere on a big map fails both `check` and the
-full-order test.
+| Path | Purpose |
+|---|---|
+| `include/` | Shared data structures and function interfaces. |
+| `src/` | Grid utilities, search algorithms, route-planning algorithms, and command-line drivers. |
+| `maps/` | Example grid maps used by the programs. |
+| `tests/` | Automated tests and test support. |
+| `expected/` | Reference outputs used by the comparison script. |
+| `web/` | HTML and JavaScript visualisation templates. |
+| `bench/` | Benchmark inputs, measurement script, and plotting script. |
+| `.vscode/` | VS Code build, test, and debugging configurations. |
+| `Makefile` | Build and test targets. |
+| `run` | Builds and runs an algorithm on a selected map. |
+| `check` | Compares program output with the reference results. |
 
-## The maps
-
-`m01`–`m09` uniform cost, Stages 1–2. `t01`–`t05` terrain costs, Stages 3–4.
-`w01`–`w07` multiple stops, Stages 5–7. `e01`–`e05` edge cases: a sealed
-destination, a 798-cell corridor, a destination one step away, a start that
-is already the destination, a map with one open cell.
-
-`./run bench` measures everything Phase 2 needs into `bench/results.csv`, and `python3 bench/plot.py` draws it; see `bench/README.md`. `AI_CONTEXT.md` is what to give any AI tool before asking it about this project.
-
-`map_gen.py` makes more.
+For implementation details and design trade-offs, see [DESIGN.md](DESIGN.md).
 
 ## Requirements
 
-A C++17 compiler and `make`. A browser for the replays, which are plain files
-on disk with no server behind them. SDL2 is optional and only needed for
-`--window`.
+On Ubuntu or another Linux distribution:
 
-## VS Code
+- A C++17-compatible compiler (GCC or Clang).
+- GNU Make.
+- A web browser for the HTML visualisations.
 
-Open `project.code-workspace`. Tasks are wired to whichever `src/*.cpp`
-you have open: build it, test it, run it, check it. `F5` debugs the current
-stage; the second launch configuration debugs its tests.
+Install the core tools on Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install build-essential g++ make
+```
+
+Optional tools:
+
+```bash
+# Debugging from VS Code
+sudo apt install gdb
+
+# Benchmark plots
+sudo apt install python3 python3-matplotlib
+
+# Native visualisation window (the browser visualiser works without SDL2)
+sudo apt install pkg-config libsdl2-dev
+```
+
+SDL2 is optional. Without it, requests for a native window fall back to the browser visualisation.
+
+## Build
+
+Clone the repository and enter its directory:
+
+```bash
+git clone https://github.com/ayabongacuba/gridsearch-project.git
+cd gridsearch-project
+```
+
+Build all algorithm executables:
+
+```bash
+make
+```
+
+The executables are written to `bin/`.
+
+Build one algorithm only:
+
+```bash
+make astar
+```
+
+Remove generated executables and replay files:
+
+```bash
+make clean
+```
+
+## Run
+
+The `run` script builds the requested executable and runs it on a map. By default, it opens a browser replay.
+
+```bash
+# Run a search and open its replay
+./run dfs m05
+
+# Run without opening a visualisation
+./run bfs m05 --no-viz
+
+# Run a weighted search
+./run dijkstra t02
+
+# Run A* and print the route on the map
+./run astar t04 --render
+
+# Compare DFS, BFS, Dijkstra, and A* on the same map
+./run compare m05
+
+# Build a waypoint matrix using Floyd–Warshall
+./run floyd w02 --fw
+
+# Build the same matrix using repeated Dijkstra searches
+./run floyd w02 --dij
+
+# Find a closed tour through the waypoints
+./run tsp w02
+```
+
+Map names can be shortened to a unique prefix, such as `m05`, `t04`, or `w02`. Run `./run --help` to see the available maps and options.
+
+### Visualisation modes
+
+- **Browser replay:** the default mode. The generated HTML file is saved in `runs/` and opened in a browser.
+- **Live replay:** `./run dfs m05 --live` opens the browser first and streams search events while the algorithm runs.
+- **Native window:** add `--window` when SDL2 is installed.
+- **Side-by-side comparison:** `./run compare m05` replays the four single-goal search algorithms in synchronisation by expanded cells.
+
+## Tests and Reference Checks
+
+Run the automated tests:
+
+```bash
+# All tests
+make test
+
+# Tests for one algorithm
+make test-dfs
+make test-astar
+```
+
+Run the reference-output checks:
+
+```bash
+# Check every algorithm and map
+./check
+
+# Check one algorithm
+./check astar
+
+# Check one algorithm on one map
+./check astar m05
+```
+
+The test suite checks algorithm behaviour and edge cases. The `check` script compares the program's output with the reference files in `expected/`, while ignoring values that naturally vary between runs, such as execution time.
+
+## Benchmarks
+
+The benchmark script measures search behaviour and route-planning performance:
+
+```bash
+# Run the full benchmark set
+./run bench
+
+# Run a shorter set
+./run bench --quick
+
+# Generate plots from bench/results.csv
+python3 bench/plot.py
+```
+
+The measurements are written to `bench/results.csv`; the plots are written to `bench/plots/`. The plotting script requires Matplotlib.
+
+## Visual Studio Code
+
+Open the workspace file:
+
+```bash
+code project.code-workspace
+```
+
+Install Microsoft's **C/C++** extension to use IntelliSense and the provided debugger configurations. The workspace tasks include building the project, running tests, launching an algorithm, and checking reference output. GDB is required for the Linux debugging configuration.
+
+## Licence
+
+This repository does not currently include an open-source licence. Until a licence is added, do not assume that the code is available for reuse, modification, or redistribution.
