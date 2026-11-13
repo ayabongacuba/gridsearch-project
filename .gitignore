@@ -1,0 +1,20 @@
+# Compiled programs and object files
+/bin/
+*.o
+*.obj
+*.exe
+*.out
+
+# Generated visualisation replays and traces
+/runs/
+
+# Generated benchmark plots
+/bench/plots/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Operating-system files
+.DS_Store
+Thumbs.db
