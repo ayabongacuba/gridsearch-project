@@ -212,6 +212,42 @@ code project.code-workspace
 
 Install Microsoft's **C/C++** extension to use IntelliSense and the provided debugger configurations. The workspace tasks include building the project, running tests, launching an algorithm, and checking reference output. GDB is required for the Linux debugging configuration.
 
+## What I Learned
+
+Working through this project helped me connect graph theory and data structures to working C++ programs. In particular, it gave me practical experience with:
+
+- Modelling a two-dimensional grid as a graph of vertices and edges.
+- Choosing a suitable frontier structure: a stack for DFS, a queue for BFS, and a priority queue for Dijkstra and A*.
+- Understanding how weighted movement changes the meaning of a shortest path.
+- Seeing how the cost model affects later computations, including why the waypoint matrix is asymmetric.
+- Comparing exact optimisation with heuristic methods when the search space becomes too large.
+- Using automated tests, reference outputs, and trace data to investigate correctness beyond the final route alone.
+
+## Complexity at a Glance
+
+Let **V** be the number of grid cells, **E** the number of legal adjacency edges, and **K** the number of waypoints.
+
+| Algorithm | Time complexity | Additional space |
+|---|---:|---:|
+| DFS | O(V + E) | O(V + E) |
+| BFS | O(V + E) | O(V) |
+| Dijkstra | O((V + E) log V) | O(V + E) |
+| A* | O((V + E) log V) worst case | O(V + E) |
+| Floyd–Warshall | O(V³) | O(V²) |
+| Exact travelling-salesperson search | O((K − 1)! × K), after building the matrix | O(K), excluding the matrix |
+
+A grid has at most four neighbours per cell, so **E = O(V)**. The detailed analysis, including the repeated-Dijkstra matrix builder and the larger-tour heuristic, is in [DESIGN.md](DESIGN.md).
+
+## Engineering Decisions and Trade-offs
+
+- **Different frontiers serve different goals.** DFS explores with a stack, BFS explores in increasing step count with a queue, and cost-based searches use a priority queue.
+- **The entry-cost model matters.** Charging the destination cell makes travel costs directional, so the waypoint matrix must not be treated as symmetric without a justified transformation.
+- **A* uses Manhattan distance.** This matches four-directional movement and provides a lower-bound estimate because every passable move costs at least 1.
+- **Tour planning changes with problem size.** The implementation checks every ordering for up to 11 waypoints, then switches to a multi-start nearest-neighbour and 2-opt heuristic. The heuristic is not guaranteed to find the global optimum.
+- **Visualisation is part of debugging.** Recorded events make the search process inspectable, while tests and reference comparisons check behaviour that a final route alone cannot reveal.
+
+The complexity figures are theoretical upper bounds based on the current implementation. Actual timings depend on the map and the machine. The benchmark scripts can be used to collect reproducible measurements; no performance result is claimed here without running those benchmarks.
+
 ## Licence
 
 This repository does not currently include an open-source licence. Until a licence is added, do not assume that the code is available for reuse, modification, or redistribution.
