@@ -142,3 +142,76 @@ The benchmark tools collect measurements such as expanded cells, maximum frontie
 - A*'s heuristic guides the search, but the amount of work it saves depends on the map.
 - Floyd–Warshall's V by V table can require substantial memory on large grids.
 - Exact tour enumeration becomes impractical as the number of waypoints grows, which is why larger instances use a heuristic.
+
+## 9. Complexity Analysis
+
+Let:
+
+- **V** be the total number of grid cells (`rows × columns`).
+- **E** be the number of legal movement edges between passable cells.
+- **K** be the number of waypoints.
+
+A grid cell has at most four neighbours, so the grid graph is sparse: `E = O(V)`.
+
+The bounds below describe the current implementation. They are worst-case bounds; a search can finish earlier when it reaches its goal.
+
+| Algorithm | Time complexity | Auxiliary space |
+|---|---:|---:|
+| DFS | O(V + E) | O(V + E) |
+| BFS | O(V + E) | O(V) |
+| Dijkstra | O((V + E) log V) | O(V + E) |
+| A* | O((V + E) log V) worst case | O(V + E) |
+| Floyd–Warshall | O(V³) | O(V²) |
+| Repeated-Dijkstra waypoint matrix | O(K² (V + E) log V) | O(V + E + K²) |
+| Exact tour enumeration | O((K − 1)! × K), excluding matrix construction | O(K), excluding matrix storage |
+
+### DFS and BFS
+
+Both algorithms inspect each expanded cell and its neighbours. Because the graph is represented by a grid with bounded degree, the total traversal work is O(V + E), which is O(V) for these maps.
+
+DFS uses an explicit stack and parent/visited storage. In this implementation, a cell can be queued more than once before it is first popped, so the stack can hold duplicate entries; the general bound is O(V + E). BFS marks cells as seen when they are pushed into its queue, so each cell enters the queue at most once and its auxiliary storage is O(V).
+
+### Dijkstra and A*
+
+Both use a priority queue. The implementation can push a new entry when it discovers a cheaper route rather than modifying an entry already in the queue. This lazy approach can create stale entries that are discarded later. Across the search, there can be O(E) queue insertions, giving O((V + E) log V) time and O(V + E) auxiliary space.
+
+A* has the same worst-case asymptotic bound as Dijkstra. Its heuristic can reduce the number of cells expanded on a particular map, but it does not guarantee a better worst-case complexity.
+
+### Floyd–Warshall
+
+The implementation builds a distance table for all V grid cells. Its three nested loops examine intermediate, source, and destination cells, giving O(V³) time. The distance table stores V² values, giving O(V²) space.
+
+### Repeated Dijkstra
+
+The current matrix-building implementation loops over every ordered pair of distinct waypoints and calls the single-goal search separately for each pair. That is K(K − 1) searches, not just K searches.
+
+Using the Dijkstra upper bound for each call gives O(K² (V + E) log V) time. The searches run one after another, so the working search structures take O(V + E) space at a time; the resulting waypoint matrix takes O(K²) space.
+
+An alternative implementation could run one full Dijkstra search per source waypoint and read all destination waypoint distances from that one run. That would reduce the number of searches from K(K − 1) to K, but it is not how the current implementation is written.
+
+### Exact Travelling-Salesperson Search
+
+The exact branch fixes waypoint 0 and enumerates every permutation of the remaining K − 1 waypoints. There are (K − 1)! permutations, and evaluating one ordering takes O(K) time. The tour enumeration therefore takes O((K − 1)! × K) time after the waypoint matrix has been built.
+
+The permutation and candidate-order storage is O(K), excluding the O(K²) waypoint matrix.
+
+### Larger-Tour Heuristic
+
+For larger waypoint sets, the implementation tries nearest-neighbour tours from multiple starting waypoints. Building these tours takes O(K³) time in total: there are K starting points, and each construction makes O(K) choices while scanning up to K possible next waypoints.
+
+Each 2-opt improvement pass examines O(K²) candidate reversals. If P passes are performed, the improvement work is O(PK²). P depends on the tour and the improvements found. The implementation also uses a time limit, so the amount of local search performed is runtime-dependent; there is no fixed input-size-only bound for P in this implementation.
+
+The waypoint matrix still has to be built first. The heuristic uses O(K²) matrix storage and O(K) additional storage for tour orders and visited flags.
+
+## 10. What I Learned
+
+This project brought together several ideas that are easy to study separately but behave differently when implemented in one system:
+
+- A grid can be modelled as a graph, and the choice of representation affects how neighbours and costs are accessed.
+- The data structure used for the frontier changes the search order and the result that an algorithm guarantees.
+- A heuristic such as Manhattan distance can guide a search, but its validity depends on the movement rules and minimum movement cost.
+- A small modelling decision—charging the cost when entering a cell—changes the waypoint matrix and the travelling-salesperson calculations.
+- Correctness needs more than checking whether a path was found. Route legality, cost, edge cases, expansion order, and frontier behaviour all need to be tested.
+- Exact algorithms and heuristics make different trade-offs between a guarantee of optimality and the size of the problem they can handle.
+
+These are the concepts demonstrated by the implementation; the benchmark results should be added only after running the benchmark suite and recording the actual measurements.
